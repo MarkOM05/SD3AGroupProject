@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+httpx
+pydantic
+pandas
+scikit-learn
+joblib
+web3
+firebase-admin
+# Pick ONE agent framework and uncomment:
+# crewai
+# langgraph
+# pyautogen

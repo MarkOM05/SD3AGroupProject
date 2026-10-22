@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Helpers ----------
+    function signedIn() { return request.auth != null; }
+    function isRole(r) { return signedIn() && request.auth.token.role == r; }
+    function uid() { return request.auth.uid; }
+    function appData(appId) {
+      return get(/databases/$(database)/documents/applications/$(appId)).data;
+    }
+    function canViewApp(appId) {
+      return isRole('underwriter')
+        || (isRole('borrower') && appData(appId).borrowerId == uid())
+        || (isRole('broker') && appData(appId).brokerId == uid());
+    }
+    function changedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+    function validTransition() {
+      return resource.data.status == request.resource.data.status
+        || (resource.data.status == 'AI Deliberated' && request.resource.data.status == 'Underwriter Approved')
+        || (resource.data.status == 'Underwriter Approved' && request.resource.data.status == 'Funded')
+        || (resource.data.status == 'Funded' && request.resource.data.status == 'Closed');
+    }
+
+    // ---------- Users ----------
+    match /users/{userId} {
+      allow read: if signedIn() && (
+        uid() == userId
+        || isRole('underwriter')
+        || (isRole('broker') && resource.data.assignedBrokerId == uid())
+      );
+      // Self-signup is borrower only; staff accounts are created by admin script
+      allow create: if signedIn() && uid() == userId
+        && request.resource.data.role == 'borrower';
+      allow update: if signedIn() && uid() == userId
+        && !request.resource.data.diff(resource.data).affectedKeys()
+             .hasAny(['role', 'assignedBrokerId']);
+    }
+
+    // ---------- Applications ----------
+    match /applications/{appId} {
+      allow read: if isRole('underwriter')
+        || (isRole('borrower') && resource.data.borrowerId == uid())
+        || (isRole('broker') && resource.data.brokerId == uid());
+
+      // Borrower submits; computed/blockchain fields can't be supplied by the client
+      allow create: if isRole('borrower')
+        && request.resource.data.borrowerId == uid()
+        && request.resource.data.status == 'Applied'
+        && !request.resource.data.keys().hasAny([
+             'mlValuation','ltv','dti','approvalLikelihood','riskTier',
+             'decision','apr','creditMemo','auditHash','blockchain']);
+
+      // Borrower may edit their own inputs only while still 'Applied'
+      allow update: if isRole('borrower')
+        && resource.data.borrowerId == uid()
+        && resource.data.status == 'Applied'
+        && changedOnly(['income','debts','deposit','termYears','property','updatedAt']);
+
+      // Underwriter: sign-off fields only, forward transitions only
+      allow update: if isRole('underwriter')
+        && changedOnly(['status','decision','updatedAt'])
+        && validTransition();
+
+      // Never allow deletes from clients (default deny)
+
+      match /agentLogs/{logId} {
+        allow read: if isRole('underwriter')
+          || (isRole('broker') && appData(appId).brokerId == uid());
+        allow write: if false;   // backend (Admin SDK) only
+      }
+
+      match /documents/{docId} {
+        allow read: if canViewApp(appId);
+        allow create: if canViewApp(appId)
+          && request.resource.data.uploadedBy == uid();
+      }
+
+      match /messages/{msgId} {
+        allow read: if canViewApp(appId);
+        allow create: if canViewApp(appId)
+          && request.resource.data.senderId == uid();
+      }
+    }
+
+    // ---------- Payments (written by backend after Stripe/PayPal confirms) ----------
+    match /payments/{paymentId} {
+      allow read: if isRole('underwriter') || resource.data.userId == uid();
+      allow write: if false;
+    }
+
+    // ---------- Reviews ----------
+    match /reviews/{reviewId} {
+      allow create: if isRole('borrower') && request.resource.data.userId == uid();
+      allow read: if isRole('underwriter') || resource.data.userId == uid();
+    }
+
+    // ---------- Support tickets ----------
+    match /supportTickets/{ticketId} {
+      allow create: if isRole('borrower') && request.resource.data.userId == uid();
+      allow read: if isRole('underwriter') || resource.data.userId == uid();
+      allow update: if isRole('underwriter') && changedOnly(['status']);
+    }
+
+    // ---------- Valuation checks (optional history) ----------
+    match /valuationChecks/{checkId} {
+      allow create: if isRole('borrower') && request.resource.data.userId == uid();
+      allow read: if resource.data.userId == uid() || isRole('underwriter');
+    }
+
+    // ---------- Stress tests ----------
+    match /stressTests/{testId} {
+      allow read, write: if isRole('underwriter');
+    }
+  }
+}

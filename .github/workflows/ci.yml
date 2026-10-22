@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Each job skips itself if its folder isn't set up yet.
+jobs:
+  ai-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install and test
+        if: hashFiles('ai-engine/requirements.txt') != ''
+        working-directory: ai-engine
+        run: |
+          pip install -r requirements.txt pytest
+          pytest || [ $? -eq 5 ]   # exit code 5 = no tests written yet
+
+  blockchain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install and test
+        if: hashFiles('blockchain/package.json') != ''
+        working-directory: blockchain
+        run: |
+          npm install
+          npx hardhat test
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install, test, build
+        if: hashFiles('web/package.json') != ''
+        working-directory: web
+        run: |
+          npm ci
+          npm run lint --if-present
+          npm test --if-present
+          npm run build
+
+  mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Unit tests
+        if: hashFiles('mobile/gradlew') != ''
+        working-directory: mobile
+        run: |
+          chmod +x gradlew
+          ./gradlew testDebugUnitTest
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose file
+        run: |
+          cp .env.example .env
+          docker compose config -q

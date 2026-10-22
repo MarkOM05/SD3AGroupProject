@@ -1,0 +1,76 @@
+services:
+  # ---------- AL-Web (React) ----------
+  web:
+    build: ./web
+    ports:
+      - "3000:80"
+    depends_on:
+      - ai-engine
+
+  # ---------- AL-AI Engine (FastAPI: ML valuation + agent committee) ----------
+  ai-engine:
+    build: ./ai-engine
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: llama3.2
+      RPC_URL: http://blockchain:8545
+      DEPLOYMENT_FILE: /shared/deployment.json
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/firebase-service-account.json
+    volumes:
+      - ./ai-engine/models:/app/models      # drop your trained avm.joblib here
+      - shared:/shared:ro                   # contract address + ABI from the deployer
+      - ./secrets:/secrets:ro               # Firebase service account key
+    depends_on:
+      ollama:
+        condition: service_started
+      deployer:
+        condition: service_completed_successfully
+
+  # ---------- Local LLM ----------
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    # NVIDIA GPU (needs NVIDIA Container Toolkit):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  ollama-pull:                              # downloads the model once, then exits
+    image: ollama/ollama
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["ollama", "pull", "llama3.2"]
+    restart: "no"
+
+  # ---------- Blockchain (Hardhat local EVM) ----------
+  blockchain:
+    build: ./blockchain
+    ports:
+      - "8545:8545"
+
+  deployer:                                 # deploys ALLoanNote, writes address + ABI to /shared
+    build: ./blockchain
+    depends_on:
+      - blockchain
+    environment:
+      RPC_URL: http://blockchain:8545
+    volumes:
+      - shared:/shared
+    entrypoint: ["sh", "-c", "until npx hardhat run scripts/deploy.js --network docker; do echo 'waiting for chain...'; sleep 3; done"]
+    restart: "no"
+
+volumes:
+  ollama-data:
+  shared:
