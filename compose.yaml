@@ -20,9 +20,9 @@ services:
       DEPLOYMENT_FILE: /shared/deployment.json
       GOOGLE_APPLICATION_CREDENTIALS: /secrets/firebase-service-account.json
     volumes:
-      - ./ai-engine/models:/app/models      # drop your trained avm.joblib here
-      - shared:/shared:ro                   # contract address + ABI from the deployer
-      - ./secrets:/secrets:ro               # Firebase service account key
+      - ./ai-engine/models:/app/models # drop your trained avm.joblib here
+      - shared:/shared:ro # contract address + ABI from the deployer
+      - ./secrets:/secrets:ro # Firebase service account key
     depends_on:
       ollama:
         condition: service_started
@@ -45,7 +45,7 @@ services:
     #           count: all
     #           capabilities: [gpu]
 
-  ollama-pull:                              # downloads the model once, then exits
+  ollama-pull: # downloads the model once, then exits
     image: ollama/ollama
     depends_on:
       - ollama
@@ -60,7 +60,7 @@ services:
     ports:
       - "8545:8545"
 
-  deployer:                                 # deploys ALLoanNote, writes address + ABI to /shared
+  deployer: # deploys ALLoanNote, writes address + ABI to /shared
     build: ./blockchain
     depends_on:
       - blockchain
@@ -68,7 +68,12 @@ services:
       RPC_URL: http://blockchain:8545
     volumes:
       - shared:/shared
-    entrypoint: ["sh", "-c", "until npx hardhat run scripts/deploy.js --network docker; do echo 'waiting for chain...'; sleep 3; done"]
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        "until npx hardhat run scripts/deploy.js --network docker; do echo 'waiting for chain...'; sleep 3; done",
+      ]
     restart: "no"
 
 volumes:
