@@ -2,6 +2,7 @@
 
 Group project, Year 3, 2026. Full team process: [docs/HANDBOOK.md](docs/HANDBOOK.md).
 System design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Schema: [docs/schema.md](docs/schema.md)
 
 ## Quick start (needs Docker Desktop + Git)
 
@@ -13,7 +14,7 @@ System design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | What              | URL                          |
 |-------------------|------------------------------|
 | AL-Web            | http://localhost:3000        |
-| AI engine + docs  | http://localhost:8000/docs   |
+| AI engine + docs  | http://https://sd3agroupproject.onrender.com/docs#/ |
 | Local EVM (RPC)   | http://localhost:8545        |
 | Ollama            | http://localhost:11434       |
 
@@ -21,7 +22,8 @@ System design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
     mobile/       AL-Mobile (Android Studio project)
     web/          AL-Web (React)
-    ai-engine/    FastAPI: API + ML valuation + agent committee
+    ai-engine/    ML valuation + agent committee
+    core/         FastAPI
     blockchain/   Hardhat + Solidity
     firebase/     Firestore rules + emulator config
     docs/         handbook, architecture, decisions
