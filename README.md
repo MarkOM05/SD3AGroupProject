@@ -14,7 +14,7 @@ Schema: [docs/schema.md](docs/schema.md)
 | What              | URL                          |
 |-------------------|------------------------------|
 | AL-Web            | http://localhost:3000        |
-| AI engine + docs  | http://https://sd3agroupproject.onrender.com/docs#/ |
+| AI engine + docs  | https://sd3agroupproject.onrender.com/docs#/ |
 | Local EVM (RPC)   | http://localhost:8545        |
 | Ollama            | http://localhost:11434       |
 
