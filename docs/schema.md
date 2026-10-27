@@ -1,8 +1,8 @@
 # AL (Agentic Lender): Firestore Schema
 
-**Owner:** AL-Core (team lead) | **Last updated:** `<date>` | **Version:** 0.1
+**Owner:** AL-Core (team lead) | **Last updated:** 2026-10-27 | **Version:** 0.2
 
-This file is the contract between AL-Mobile, AL-Web, AL-AI Engine and the Ledger. If a field is not listed here, do not rely on it. To change the schema, open a pull request that edits this file **and** `firestore.rules` / `firestore.indexes.json`. Only the AL-Core owner deploys.
+This file is the contract between AL-Mobile, AL-Web, AL-AI Engine and the Ledger. If a field is not listed here, do not rely on it. To change the schema, open a pull request that edits this file **and** `firestore.rules` / `firestore.indexes.json` **and** `al-core/models.py` (the Python mirror used by the API and the seed script). Only the AL-Core owner deploys.
 
 ## 1. Project facts
 
@@ -12,6 +12,7 @@ This file is the contract between AL-Mobile, AL-Web, AL-AI Engine and the Ledger
 | Firestore location | `europe-west1` (permanent) |
 | Auth providers | Email/Password, Google |
 | Storage bucket (files) | `<fill in>`; Firestore holds metadata only |
+| Firebase plan | Spark (free) assumed: no Cloud Functions, and Cloud Storage needs the Blaze plan (see §8) |
 
 ## 2. Conventions
 
@@ -20,9 +21,11 @@ This file is the contract between AL-Mobile, AL-Web, AL-AI Engine and the Ledger
 - Money is a **number in EUR** (whole euros) unless stated; payment `amount` is in **cents**.
 - Percentages (`ltv`, `dti`, `apr`) are numbers like `76.6`, **not** `0.766`.
 - `approvalLikelihood` is a number from `0` to `1`.
+- `apr` is stored as a percent (`4.35`). The Ledger converts it to basis points for the contract with `round(apr * 100)`; always round, because `4.35 * 100` is not exactly `435` in floating point.
 - `users/{uid}` uses the Firebase Auth UID as the document ID.
 - Every `applications` write sets `updatedAt`.
 - Use `null` for "not yet known"; do not use empty strings.
+- The AL-Core API (FastAPI) uses the same field names in JSON. Timestamps in API responses are ISO 8601 UTC strings; Firestore itself always stores Timestamp values. The API's live contract is its `/docs` page.
 
 ## 3. Roles
 
@@ -39,12 +42,15 @@ Roles are stored in Auth **custom claims** (`request.auth.token.role`) and mirro
 
 `Applied` → `AI Deliberated` → `Underwriter Approved` → `Funded` → `Closed`
 
+An application can also end at `Declined` (from `AI Deliberated`). `Declined` and `Closed` are terminal.
+
 | Transition | Set by | How |
 |---|---|---|
-| (create) → `Applied` | Mobile (or Web for broker-created files, if agreed) | Client write |
-| `Applied` → `AI Deliberated` | AI Engine | Admin SDK, after writing valuation fields and agentLogs |
-| `AI Deliberated` → `Underwriter Approved` | Web (underwriter) | Client write; rules enforce forward-only |
-| `Underwriter Approved` → `Funded` | Ledger / backend | Admin SDK, after minting and writing `blockchain` + `auditHash` |
+| (create) → `Applied` | Mobile (or Web for broker-created files, if agreed) | Client write; rules require `status == 'Applied'` (see §5) |
+| `Applied` → `AI Deliberated` | AI Engine | Admin SDK, after writing valuation fields and agentLogs. Started by the client calling `POST /applications/{appId}/deliberate` after the create (no Firestore listener; see §8) |
+| `AI Deliberated` → `Underwriter Approved` | Web (underwriter) | `POST /applications/{appId}/approve` (Admin SDK): checks the caller's role and the current status, then records sign-off |
+| `Underwriter Approved` → `Funded` | Ledger / backend | Same `/approve` call: mints, writes `blockchain` + `auditHash`, then sets `Funded`. If minting fails the status stays `Underwriter Approved` and `/approve` can be retried |
+| `AI Deliberated` → `Declined` | Web (underwriter) | Client write with `decision = 'Decline'`; rules enforce role and forward-only |
 | `Funded` → `Closed` | Web (underwriter) | Client write |
 
 ## 5. Who writes what
@@ -53,13 +59,16 @@ Roles are stored in Auth **custom claims** (`request.auth.token.role`) and mirro
 |---|---|
 | Application inputs (`income`, `debts`, `deposit`, `termYears`, `property`) | Mobile / Web |
 | `mlValuation`, `ltv`, `ltvBand`, `dti`, `approvalLikelihood`, `riskTier`, `apr`, `creditMemo`, initial `decision`, `agentLogs` | AI Engine |
-| `decision` override, status → `Underwriter Approved` / `Closed` | Web (underwriter) |
-| `blockchain`, `auditHash`, status → `Funded` | Ledger / backend |
+| `decision` override, status → `Declined` / `Closed` | Web (underwriter) |
+| status → `Underwriter Approved` / `Funded`, `blockchain`, `auditHash` | Ledger / backend (via `POST /applications/{appId}/approve`) |
 | `payments` | Backend, after Stripe/PayPal confirms |
 | `messages`, `reviews`, `supportTickets`, `documents` metadata | Clients |
 | `stressTests` | Web (underwriter) |
+| `valuationChecks` (optional) | Backend, from `POST /valuation` for signed-in callers |
 
 **Fields a client may never supply on application create:** `mlValuation`, `ltv`, `ltvBand`, `dti`, `approvalLikelihood`, `riskTier`, `decision`, `apr`, `creditMemo`, `auditHash`, `blockchain`.
+
+**Fields a client may only set to a fixed value on create** (enforce in `firestore.rules`): `status == 'Applied'`, `borrowerId == request.auth.uid`, `brokerId == users/{uid}.assignedBrokerId` (or `null` if the user has none), `createdAt == request.time`.
 
 ## 6. Collections
 
@@ -78,14 +87,14 @@ Roles are stored in Auth **custom claims** (`request.auth.token.role`) and mirro
 | Field | Type | Notes |
 |---|---|---|
 | `borrowerId` | string | Auth uid |
-| `brokerId` | string | Auth uid of assigned broker |
+| `brokerId` | string \| null | Auth uid of assigned broker. Copied from `users/{uid}.assignedBrokerId` at creation; `null` if the borrower has no broker |
 | `loanType` | string | `mortgage` \| `heloc` |
 | `income` | number | Gross annual household income |
 | `debts` | number | Monthly repayments on existing debts *(see open decisions)* |
 | `deposit` | number | |
 | `termYears` | number | |
 | `property` | map | See below |
-| `status` | string | See lifecycle |
+| `status` | string | `Applied` \| `AI Deliberated` \| `Underwriter Approved` \| `Funded` \| `Closed` \| `Declined` (see lifecycle) |
 | `mlValuation` | number | AI Engine |
 | `ltv` | number | Percent, AI Engine |
 | `ltvBand` | string | `<=60` \| `60-80` \| `>80`; derived from `ltv` for indexed filtering |
@@ -93,7 +102,7 @@ Roles are stored in Auth **custom claims** (`request.auth.token.role`) and mirro
 | `approvalLikelihood` | number | 0 to 1 |
 | `riskTier` | string | `Low` \| `Medium` \| `High` |
 | `decision` | string \| null | `Approve` \| `Conditionally Approve` \| `Decline` |
-| `apr` | number \| null | Percent |
+| `apr` | number \| null | Percent, e.g. `4.35` (the Ledger converts to basis points, see conventions) |
 | `creditMemo` | string \| null | From the Underwriting Strategist agent |
 | `auditHash` | string \| null | SHA-256 hex, written after on-chain sign-off |
 | `blockchain` | map \| null | `{ tokenId: number, txHash: string, contractAddress: string, borrowerRef: string }` |
@@ -120,7 +129,7 @@ Roles are stored in Auth **custom claims** (`request.auth.token.role`) and mirro
 
 ### `applications/{appId}/messages/{msgId}`
 
-`senderId` (uid), `senderRole` (string), `text` (string), `timestamp` (timestamp), `read` (boolean).
+`senderId` (uid), `senderRole` (`borrower` \| `broker` \| `underwriter`), `text` (string), `timestamp` (timestamp), `read` (boolean).
 
 ### `payments/{paymentId}` (backend writes only)
 
@@ -161,13 +170,18 @@ Do not range-filter on `ltv`; filter on `ltvBand`. Indexes live in `firestore.in
 3. **DTI formula:** how is the new loan repayment included? Does it use the stressed rate?
 4. **`riskTier` thresholds:** what LTV/DTI/likelihood values map to Low, Medium, High?
 5. **`auditHash` payload:** exactly which fields, in what canonical form (sorted-key JSON, UTF-8)? The AI Engine and Ledger must produce the same hash, so write the rule here.
-6. **AI trigger:** Flask Firestore listener on `status == 'Applied'` (assumed) or Cloud Functions?
+6. **AI trigger:** v0.2 proposes an explicit `POST /applications/{appId}/deliberate` call instead of a Firestore listener (needs an always-on process, which a free host that sleeps when idle can't give) or Cloud Functions (paid Blaze plan only). Confirm, or name the alternative.
 7. **Broker-created applications:** can brokers create files for clients? Current rules say no.
 8. **`borrowerRef` derivation:** `keccak256(uid + appId)` for the prototype. A production system would add a secret salt, since on-chain data cannot be erased later (GDPR). Ledger and AI Engine must use the same formula.
 9. **Custom feature fields:** list any extra fields here (e.g. OCR output, `apr` adjustment for BER, amenity score).
+10. **Approve flow:** v0.2 sends sign-off and minting through `POST /applications/{appId}/approve` (see §4). If Web writes the status directly instead, something else has to trigger the mint.
+11. **`Declined` status:** added in v0.2 because §4 had no end state for a Decline decision. Confirm the name and whether the pipeline view should show it.
+12. **Conditional approvals:** where are the conditions stored and who marks them met? Suggest a `conditions` array of strings written by the AI Engine and shown in the Web loan file.
+13. **File uploads:** Cloud Storage for Firebase needs the Blaze (pay-as-you-go, card required) plan. Enable it with a budget alert, or keep `documents` as metadata plus `ocrExtractedData` and skip real uploads?
 
 ## 9. Change log
 
 | Date | Change | By |
 |---|---|---|
 | `<date>` | Initial schema | AL-Core |
+| 2026-10-27 | v0.2: added `Declined` status; `brokerId` nullable plus create-time rules; AI and approve flows go through the API (no listener or Functions); `apr` basis-point note; `senderRole` values; `valuationChecks` writer; `models.py` added to the sync rule | AL-Core |
