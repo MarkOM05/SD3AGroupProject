@@ -1,5 +1,5 @@
 package com.example.bank
-
+// test
 import android.R.attr.textColor
 import android.os.Bundle
 import android.widget.Toast
