@@ -13,10 +13,10 @@ Schema: [docs/schema.md](docs/schema.md)
 
 | What              | URL                          |
 |-------------------|------------------------------|
-| AL-Web            | http://localhost:3000        |
+| AL-Web            | [http://localhost:3000](https://alagenticlender.onrender.com/dashboard) |
 | AI engine + docs  | https://sd3agroupproject.onrender.com/docs#/ |
-| Local EVM (RPC)   | http://localhost:8545        |
-| Ollama            | http://localhost:11434       |
+| Local EVM (RPC)   | http://localhost:8545 (TBC)        |
+| Ollama            | http://localhost:11434 (TBC)      |
 
 ## Folders
 
