@@ -1,8 +1,0 @@
-Train rows: 7780, Test rows: 1946
-
-                      MAE €    RMSE €     R2
-Linear regression  113330.0  171205.0  0.556
-Random forest       79762.0  125410.0  0.762
-
-Random forest best settings: {'max_depth': None, 'n_estimators': 300}
-Saved model: Random forest
