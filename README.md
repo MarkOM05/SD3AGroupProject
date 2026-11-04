@@ -13,8 +13,8 @@ Schema: [docs/schema.md](docs/schema.md)
 
 | What              | URL                          |
 |-------------------|------------------------------|
-| AL-Web            | [https://alagenticlender.onrender.com/dashboard] |
-| AI engine + docs  | [https://sd3agroupproject.onrender.com/docs#/] |
+| AL-Web            | [https://alagenticlender.onrender.com/](https://alagenticlender.onrender.com/) |
+| AI engine + docs  | [https://sd3agroupproject.onrender.com/docs#/](https://sd3agroupproject.onrender.com/docs#/) |
 | Local EVM (RPC)   | http://localhost:8545 (TBC)        |
 | Ollama            | http://localhost:11434 (TBC)      |
 
