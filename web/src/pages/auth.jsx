@@ -6,7 +6,7 @@ import {
   updateProfile
 } from "firebase/auth";
 import { auth } from "../firebase";
-import { doc, setDoc } from "firebase/firestore";
+//import { doc, setDoc } from "firebase/firestore";
 
 function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -35,12 +35,12 @@ function Auth() {
 		  displayName: name
 		});
 
-		await setDoc(doc(db, "demoProfiles", userCredential.user.uid), {
+		/*await setDoc(doc(db, "demoProfiles", userCredential.user.uid), {
 		  name: name,
 		  email: email,
 		  selectedRole: role,
 		  createdAt: new Date()
-		});
+		});*/
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
