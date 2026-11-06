@@ -20,9 +20,6 @@ function Blockchain() {
 
   return (
     <main className="blockchain-page">
-		<head>
-			<title>AL - Blockchain</title>
-		</head>
       <header className="page-header">
         <h2>Blockchain</h2>
         <p>On-chain loan records and audit history</p>

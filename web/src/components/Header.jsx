@@ -19,8 +19,8 @@ function Header() {
 
       <nav className="authentication-navigation">
         <ul id="authentication">
-          <li><NavLink to="/signin" id="SignInBtn">Sign In</NavLink></li>
-          <li><NavLink to="/signup" id="SignUpBtn">Sign Up</NavLink></li>
+          <li><NavLink to="/auth" id="SignInBtn">Sign In</NavLink></li>
+          <li><NavLink to="/auth" id="SignUpBtn">Sign Up</NavLink></li>
           <li><button id="SignOutBtn" hidden>Sign Out</button></li>
         </ul>
       </nav>

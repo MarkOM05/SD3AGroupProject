@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Applications from "./pages/Applications";
 import AIAnalysis from "./pages/AIAnalysis";
 import Blockchain from "./pages/Blockchain";
+import Auth from "./pages/Auth";
 import "./App.css";
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
 		<div>
 			{/*<h1>Welcome to my React Website!</h1>*/}
 			<Routes>
+				<Route path="/auth" element={<Auth />} />
 				<Route path="/" element={<Layout />}>
 				  <Route index element={<Navigate to="/dashboard" replace />} />
 				  <Route path="dashboard" element={<Dashboard />} />

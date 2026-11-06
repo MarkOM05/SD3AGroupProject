@@ -4,10 +4,6 @@ function Applications() {
 	const [selectedApplication, setSelectedApplication] = useState(null);
 	return (
 		<main className="applications-page">
-			<head>
-				<title>AL - Applications</title>
-			</head>
-
 		  <header className="page-header">
 			<h2>Applications</h2>
 			<p>Manage and review your mortgage applications</p>

@@ -1,10 +1,6 @@
 function AIAnalysis() {
   return (
     <main className="ai-analysis-page">
-		<head>
-			<title>AL - AI Analysis</title>
-		</head>
-	
       <header className="page-header">
         <h2>AI Analysis</h2>
         <p>Review AI assessments and lending recommendations</p>

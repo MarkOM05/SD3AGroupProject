@@ -1,12 +1,24 @@
+import { auth } from "../firebase";
+import { useState, useEffect } from "react";
+
 function Dashboard() {
+	const [userName, setUserName] = useState("");
+
+	useEffect(() => {
+	  const unsubscribe = auth.onAuthStateChanged((user) => {
+		if (user) {
+		  setUserName(user.displayName || user.email);
+		} else {
+		  setUserName("User");
+		}
+	  });
+
+	  return unsubscribe;
+	}, []);
   return (
     <main className="dashboard">
-		<head>
-			<title>AL - Dashboard</title>
-		</head>
-
       <header className="dashboard-header">
-        <h2>Welcome, User!</h2>
+        <h2>Welcome, {userName}!</h2>
         <p>Here is an overview of your lending pipeline.</p>
       </header>
 
