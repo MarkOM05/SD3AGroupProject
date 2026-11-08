@@ -1,0 +1,8 @@
+{
+  "name": "al-lender-chain",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "hardhat": "^3.0.0"
+  }
+}
