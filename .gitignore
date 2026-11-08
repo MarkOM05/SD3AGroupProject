@@ -11,6 +11,7 @@ secrets/*
 __pycache__/
 *.pyc
 .venv/
+venv/
 ai-engine/models/*.joblib
 
 # Node / web
