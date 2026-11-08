@@ -48,7 +48,7 @@ class StressTestCreate(BaseModel):
 class Application(ApplicationForm):
     borrowerId: str
     brokerId: str | None = None
-    status: Status = Status.applied
+    status: Status = Status.submitted
     mlValuation: int | None = None
     ltv: float | None = None              # percent, e.g. 82.5
     ltvBand: str | None = None
