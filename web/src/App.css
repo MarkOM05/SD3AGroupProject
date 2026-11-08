@@ -175,13 +175,14 @@
 
 /* Sign Out */
 #SignOutBtn {
-  background-color: #dc2626;
-  color: white;
-  border: none;
+  background-color: white;
+  color: #dc2626;
+  border: 1px solid #dc2626;
 }
 
 #SignOutBtn:hover {
-  background-color: #b91c1c;
+  background-color: #dc2626;
+  color: white;
   transition: 0.3s ease;
 }
 

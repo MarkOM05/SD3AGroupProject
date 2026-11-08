@@ -1,6 +1,19 @@
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase";
 
 function Header() {
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    try {
+      await signOut(auth);
+      navigate("/auth");
+    } catch (error) {
+      console.log("Error signing out:", error);
+    }
+  }
+
   return (
     <header className="main-header">
 
@@ -19,9 +32,11 @@ function Header() {
 
       <nav className="authentication-navigation">
         <ul id="authentication">
-          <li><NavLink to="/auth" id="SignInBtn">Sign In</NavLink></li>
-          <li><NavLink to="/auth" id="SignUpBtn">Sign Up</NavLink></li>
-          <li><button id="SignOutBtn" hidden>Sign Out</button></li>
+          <li>
+            <button id="SignOutBtn" onClick={handleSignOut}>
+              Sign Out
+            </button>
+          </li>
         </ul>
       </nav>
 
