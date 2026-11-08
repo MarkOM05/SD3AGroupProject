@@ -1,7 +1,57 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { auth, db } from "../firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 function Applications() {
 	const [selectedApplication, setSelectedApplication] = useState(null);
+	const [applications, setApplications] = useState([]);
+	const [loading, setLoading] = useState(true);
+	const [searchTerm, setSearchTerm] = useState("");
+	useEffect(() => {
+		const unsubscribe = onAuthStateChanged(auth, async (user) => {
+			if (!user) {
+				setApplications([]);
+				setLoading(false);
+				return;
+			}
+
+			try {
+				const tokenResult = await user.getIdTokenResult(true);
+				const role = tokenResult.claims.role;
+				let applicationsQuery;
+
+				if (role === "underwriter") {
+					applicationsQuery = collection(db, "applications");
+				} else if (role === "broker") {
+					applicationsQuery = query(
+						collection(db, "applications"),
+						where("brokerId", "==", user.uid)
+					);
+				} else {
+					setApplications([]);
+					setLoading(false);
+					return;
+				}
+
+				const snapshot = await getDocs(applicationsQuery);
+
+				const applicationList = snapshot.docs.map((document) => ({
+					...document.data(),
+					id: document.id
+				}));
+
+				setApplications(applicationList);
+				console.log("Applications loaded:", applicationList);
+
+			} catch (error) {
+				console.error("Error loading applications:", error);
+			} finally {
+				setLoading(false);
+			}
+		});
+		return unsubscribe;
+	}, []);
 	return (
 		<main className="applications-page">
 		  <header className="page-header">
@@ -70,46 +120,32 @@ function Applications() {
 			  </thead>
 
 			  <tbody>
-				<tr>
-				  <td>Norm</td>
-				  <td>320K</td>
-				  <td>Dublin</td>
-				  <td>74%</td>
-				  <td>Low</td>
-				  <td>Review</td>
-				  <td><button type="button" onClick={() => setSelectedApplication("Norm")}>View</button></td>
-				</tr>
+				{loading && (
+					<tr>
+						<td colSpan="7">Loading applications...</td>
+					</tr>
+				)}
 
-				<tr>
-				  <td>Grace</td>
-				  <td>400K</td>
-				  <td>Cork</td>
-				  <td>83%</td>
-				  <td>High</td>
-				  <td>Approved</td>
-				  <td><button type="button" onClick={() => setSelectedApplication("Grace")}>View</button></td>
-				</tr>
+				{!loading && applications.length === 0 && (
+					<tr>
+						<td colSpan="7">No applications found.</td>
+					</tr>
+				)}
 
-				<tr>
-				  <td>Peter</td>
-				  <td>250K</td>
-				  <td>Galway</td>
-				  <td>68%</td>
-				  <td>Medium</td>
-				  <td>Review</td>
-				  <td><button type="button" onClick={() => setSelectedApplication("Peter")}>View</button></td>
-				</tr>
-
-				<tr>
-				  <td>Clare</td>
-				  <td>380K</td>
-				  <td>Dublin</td>
-				  <td>79%</td>
-				  <td>Medium</td>
-				  <td>Review</td>
-				  <td><button type="button" onClick={() => setSelectedApplication("Clare")}>View</button></td>
-				</tr>
-			  </tbody>
+				{!loading && applications.map((application) => (
+					<tr key={application.id}>
+						<td>{application.borrowerId}</td>
+						<td>{application.property && application.property.askingPrice}</td>
+						<td>{application.property && application.property.county}</td>
+						<td>{application.ltv || "N/A"}</td>
+						<td>{application.riskTier || "N/A"}</td>
+						<td>{application.status}</td>
+						<td>
+							<button type="button" onClick={() => setSelectedApplication(application)}>View</button>
+						</td>
+					</tr>
+				))}
+				</tbody>
 			</table>
 		  </section>
 		  
