@@ -8,7 +8,7 @@ Role = Literal["borrower", "broker", "underwriter"]
 Decision = Literal["Approve", "Conditionally Approve", "Decline"]
 
 class Status(str, Enum):
-    applied = "Applied"
+    submitted = "Submitted"
     ai_deliberated = "AI Deliberated"
     approved = "Underwriter Approved"
     funded = "Funded"
@@ -26,7 +26,7 @@ class PropertySpec(BaseModel):          # used by /valuation
 class Property(PropertySpec):
     askingPrice: int = Field(gt=0)
 
-class ApplicationCreate(BaseModel):     # borrowerId comes from the login token
+class ApplicationForm(BaseModel):     # borrowerId comes from the login token
     loanType: Literal["Mortgage", "HELOC"]
     income: int = Field(gt=0)
     debts: int = Field(ge=0)
@@ -38,13 +38,14 @@ class AffordabilityIn(BaseModel):
     income: int = Field(gt=0)
     debts: int = Field(ge=0)
     deposit: int = Field(ge=0)
-    termYears: int = Field(ge=1, le=40)
+    propertyValue: int = Field(gt=0)
+    termYears: int = Field(ge=5, le=35)
 
 class StressTestCreate(BaseModel):
     rateShockBps: int = Field(ge=100, le=300)
 
 # ---------- what is STORED / returned ----------
-class Application(ApplicationCreate):
+class Application(ApplicationForm):
     borrowerId: str
     brokerId: str | None = None
     status: Status = Status.applied
