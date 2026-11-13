@@ -5,9 +5,11 @@ import threading
 
 from web3 import Web3
 from web3.logs import DISCARD
+from web3.middleware import ExtraDataToPOAMiddleware
 
 # Connect to the blockchain with our account
 w3 = Web3(Web3.HTTPProvider(os.environ["RPC_URL"]))
+w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 account = w3.eth.account.from_key(os.environ["PRIVATE_KEY"])
 
 # Load our two deployed contracts: their address, and their ABI (list of functions)
