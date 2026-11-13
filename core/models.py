@@ -121,3 +121,15 @@ class StressTest(StressTestCreate):
     portfolioSnapshot: dict
     results: dict
     createdAt: datetime
+
+class ApprovalIn(BaseModel):
+    """Loan terms and decision records for an approval.
+    TODO: load these from Firestore using app_id instead of the request body."""
+
+    borrowerId: str
+    principal: float = Field(gt=0)
+    aprPercent: float = Field(ge=0, le=100)
+    termMonths: int = Field(gt=0, le=600)
+    creditMemo: str = Field(min_length=1)
+    valuation: dict
+    underwriterId: str

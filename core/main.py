@@ -3,12 +3,13 @@ from typing import Literal, Optional
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+import chain
 from models import (
     AffordabilityIn,
     ApplicationForm,
     PropertySpec,
     Status,
-    StressTestCreate,
+    StressTestCreate, ApprovalIn,
 )
 
 app = FastAPI(title="AL Core API")
@@ -39,15 +40,13 @@ def valuation(body: PropertySpec, authorization: Optional[str] = Header(None)):
 
 
 @app.post("/applications/{app_id}/approve")
-def approve(app_id: str, authorization: Optional[str] = Header(None)):
-    # TODO: check role, check status, hash memo, mint on-chain, save to Firestore
-    return {
-        "id": app_id,
-        "status": "Underwriter Approved",
-        "auditHash": "0xFAKEHASH",
-        "tokenId": 1,
-        "txHash": "0xFAKE",
-    }
+def approve(app_id: str, body: ApprovalIn, authorization: Optional[str] = Header(None)):
+    # TODO: check role, check status, save to Firestore
+    try:
+        result = chain.approve_loan(app_id, body)
+    except Exception as error:
+        raise HTTPException(status_code=502, detail=f"Blockchain error: {error}")
+    return {"id": app_id, "status": "Underwriter Approved", **result}
 
 # ---------- calculators / models ----------
 @app.post("/affordability")
