@@ -23,6 +23,9 @@ registry = w3.eth.contract(
 # Only one approval writes to the chain at a time
 lock = threading.Lock()
 
+# because the RPC provider can briefly report an old number right after a transaction.
+next_nonce = 0
+
 
 def send(function_call):
     # Sign a transaction with our key, send it, and wait until it's in a block.
