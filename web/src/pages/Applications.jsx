@@ -2,12 +2,92 @@ import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+const API_BASE_URL = "https://sd3agroupproject.onrender.com";
 
 function Applications() {
 	const [selectedApplication, setSelectedApplication] = useState(null);
 	const [applications, setApplications] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [searchTerm, setSearchTerm] = useState("");
+	const [userRole, setUserRole] = useState("");
+	const [aprPercent, setAprPercent] = useState("");
+	const [creditMemo, setCreditMemo] = useState("");
+	const [approving, setApproving] = useState(false);
+	const [approvalMessage, setApprovalMessage] = useState("");
+	
+	async function handleApprove() {
+		if (!selectedApplication) {
+			return;
+		}
+
+		const user = auth.currentUser;
+
+		if (!user) {
+			setApprovalMessage("Please sign in again.");
+			return;
+		}
+
+		if (aprPercent === "" || isNaN(Number(aprPercent)) || Number(aprPercent) < 0 || Number(aprPercent) > 100) {
+			setApprovalMessage("Please enter an APR between 0 and 100.");
+			return;
+		}
+
+		if (creditMemo.trim() === "") {
+			setApprovalMessage("Please enter a reason for approval.");
+			return;
+		}
+
+		setApproving(true);
+		setApprovalMessage("");
+
+		try {
+			const token = await user.getIdToken();
+
+			const response = await fetch(
+				API_BASE_URL + "/applications/" + selectedApplication.id + "/approve",
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Authorization": "Bearer " + token
+					},
+					body: JSON.stringify({
+						aprPercent: Number(aprPercent),
+						creditMemo: creditMemo.trim()
+					})
+				}
+			);
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				throw new Error(result.detail || "Approval failed.");
+			}
+
+			setApprovalMessage("Application approved successfully!");
+			setSelectedApplication({
+				...selectedApplication,
+				status: result.status
+			});
+
+			setApplications((currentApplications) =>
+				currentApplications.map((application) => {
+					if (application.id === selectedApplication.id) {
+						return { ...application, status: result.status };
+					}
+
+					return application;
+				})
+			);
+
+		} catch (error) {
+			console.error("Approval error:", error);
+			setApprovalMessage(error.message);
+		} finally {
+			setApproving(false);
+		}
+	}
+
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
 			if (!user) {
@@ -19,6 +99,7 @@ function Applications() {
 			try {
 				const tokenResult = await user.getIdTokenResult(true);
 				const role = tokenResult.claims.role;
+				setUserRole(role);
 				let applicationsQuery;
 
 				if (role === "underwriter") {
@@ -52,6 +133,9 @@ function Applications() {
 		});
 		return unsubscribe;
 	}, []);
+	let buttonText = "Approve Application";
+
+	if (approving === true) { buttonText = "Approving...";}
 	return (
 		<main className="applications-page">
 		  <header className="page-header">
@@ -102,8 +186,8 @@ function Applications() {
 
 		  </section>
 
-		  {/* Applications table */}
 
+		  {/* Applications table*/}
 		  <section className="applications-table">
 
 			<table>
@@ -154,8 +238,40 @@ function Applications() {
 				<article className="popup-content">
 					<h2>Application Details</h2>
 
-					<p><strong>Applicant:</strong> {selectedApplication}</p>
+					<p><strong>Applicant:</strong> {selectedApplication.borrowerId}</p>
+					<p><strong>Loan amount:</strong> {selectedApplication.property && selectedApplication.property.askingPrice}</p>
+					<p><strong>County:</strong> {selectedApplication.property && selectedApplication.property.county}</p>
+					<p><strong>Status:</strong> {selectedApplication.status}</p>
 					<p>POP UP IS WORKING!</p>
+					{userRole === "underwriter" && (
+						<section className="approval-form">
+							<h3>Underwriter Sign-Off</h3>
+
+							<label htmlFor="apr-percent">APR (%)</label>
+							<input
+								id="apr-percent"
+								type="number"
+								min="0"
+								max="100"
+								step="0.01"
+								value={aprPercent}
+								onChange={(event) => setAprPercent(event.target.value)}
+							/>
+
+							<label htmlFor="credit-memo">Credit Memo</label>
+							<textarea
+								id="credit-memo"
+								value={creditMemo}
+								onChange={(event) => setCreditMemo(event.target.value)}
+								placeholder="Enter your reason for approving this application..."
+							/>
+							
+							<button type="button" onClick={handleApprove} disabled={approving} >
+								{buttonText}
+							</button>
+							<p>{approvalMessage}</p>
+						</section>
+					)}
 					<button type="button" onClick={() => setSelectedApplication(null)}>Close</button>
 				</article>
 			</section>

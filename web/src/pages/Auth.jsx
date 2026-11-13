@@ -74,7 +74,7 @@ function Auth() {
 
 	  return (
 		<main>
-		  <h1>Agentic Leader</h1>
+		  <h1>Agentic Lender</h1>
 
 		  <h2>{pageHeading}</h2>
 
