@@ -1,9 +1,11 @@
+import json
 from typing import Literal, Optional
 
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 import chain
+import store
 from models import (
     AffordabilityIn,
     ApplicationForm,
@@ -39,14 +41,71 @@ def valuation(body: PropertySpec, authorization: Optional[str] = Header(None)):
     return {"estimatedPrice": 350000}
 
 
+APPROVABLE = {"Applied", Status.submitted.value, Status.ai_deliberated.value}
+
 @app.post("/applications/{app_id}/approve")
 def approve(app_id: str, body: ApprovalIn, authorization: Optional[str] = Header(None)):
-    # TODO: check role, check status, save to Firestore
+    # 1. Only a logged-in underwriter may approve
+    underwriter_id = store.require_role(authorization, "underwriter")
+
+    # 2. Load the application and mark it "Approving" in one step,
+    #    so a double-click can't mint two loan notes
+    ref = store.db.collection("applications").document(app_id)
+    application = store.claim(store.db.transaction(), ref, APPROVABLE, Status.approving.value)
+
+    # 3. The audit record: everything this decision was based on
+    audit_record = {
+        "applicationId": app_id,
+        "borrowerId": application["borrowerId"],
+        "underwriterId": underwriter_id,
+        "loanType": application["loanType"],
+        "income": application["income"],
+        "debts": application["debts"],
+        "deposit": application["deposit"],
+        "property": application["property"],
+        "valuation": application.get("mlValuation"),
+        "principal": application["property"]["askingPrice"] - application["deposit"],
+        "termMonths": application["termYears"] * 12,
+        "aprPercent": body.aprPercent,
+        "creditMemo": body.creditMemo,
+    }
+    audit_json = json.dumps(audit_record, sort_keys=True)
+
+    # 4. Write to the blockchain
     try:
-        result = chain.approve_loan(app_id, body)
+        result = chain.approve_loan(audit_json)
+    except Exception as error:
+        ref.update({"status": application["status"]})  # put the old status back
+        raise HTTPException(status_code=502, detail=f"Blockchain error: {error}")
+
+    # 5. Save the results, including the exact text we hashed (needed to verify later)
+    ref.update({
+        "status": Status.approved.value,
+        "aprBps": round(body.aprPercent * 100),
+        "creditMemo": body.creditMemo,
+        "auditRecord": audit_json,
+        "approvedBy": underwriter_id,
+        "updatedAt": store.SERVER_TIMESTAMP,
+        **result,  # tokenId, auditHash, txHash, auditTxHash
+    })
+    return {"id": app_id, "status": Status.approved.value, **result}
+
+
+@app.get("/applications/{app_id}/verify")
+def verify(app_id: str):
+    # Anyone can check that the saved audit record still matches the chain
+    snapshot = store.db.collection("applications").document(app_id).get()
+    if not snapshot.exists:
+        raise HTTPException(status_code=404, detail="Application not found")
+    application = snapshot.to_dict()
+    if "auditRecord" not in application:
+        raise HTTPException(status_code=409, detail="This application has no on-chain record yet")
+    try:
+        result = chain.verify(application["tokenId"], application["auditRecord"])
     except Exception as error:
         raise HTTPException(status_code=502, detail=f"Blockchain error: {error}")
-    return {"id": app_id, "status": "Underwriter Approved", **result}
+    return {"id": app_id, **result}
+
 
 # ---------- calculators / models ----------
 @app.post("/affordability")

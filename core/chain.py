@@ -36,12 +36,15 @@ def send(function_call):
     tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
     return w3.eth.wait_for_transaction_receipt(tx_hash)
 
+def hash_record(audit_json):
+    # SHA-256 fingerprint of the audit record text
+    return hashlib.sha256(audit_json.encode()).digest()
 
-def approve_loan(app_id, loan):
+
+def approve_loan(audit_json):
     # Fingerprint the decision records (memo, valuation, underwriter, terms)
-    audit_record = {"applicationId": app_id, **loan.model_dump()}
-    audit_hash = hashlib.sha256(json.dumps(audit_record, sort_keys=True).encode()).digest()
-
+    loan = json.loads(audit_json)
+    audit_hash = hash_record(audit_json)
     # Anonymise the borrower: only a salted hash goes on the public chain
     salt = os.environ["BORROWER_ID_SALT"]
     borrower_id = hashlib.sha256((salt + loan.borrowerId).encode()).digest()
@@ -51,9 +54,9 @@ def approve_loan(app_id, loan):
         mint = send(
             loan_note.functions.issue(
                 account.address,
-                round(loan.principal * 100),   # euros -> cents
-                round(loan.aprPercent * 100),  # 4.5% -> 450 basis points
-                loan.termMonths,
+                round(loan["principal"] * 100),   # euros -> cents
+                round(loan["aprPercent"] * 100),  # 4.5% -> 450 basis points
+                loan["termMonths"],
                 borrower_id,
             )
         )
@@ -67,4 +70,15 @@ def approve_loan(app_id, loan):
         "auditHash": "0x" + audit_hash.hex(),
         "txHash": "0x" + mint.transactionHash.hex(),
         "auditTxHash": "0x" + audit.transactionHash.hex(),
+    }
+
+def verify(token_id, audit_json):
+    # Re-hash the saved record and compare it with the hash stored on chain
+    on_chain = registry.functions.hashes(token_id).call()
+    recomputed = hash_record(audit_json)
+    return {
+        "tokenId": token_id,
+        "onChainHash": "0x" + bytes(on_chain).hex(),
+        "recordHash": "0x" + recomputed.hex(),
+        "match": bytes(on_chain) == recomputed,
     }

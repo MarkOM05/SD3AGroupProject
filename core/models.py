@@ -11,6 +11,7 @@ class Status(str, Enum):
     submitted = "Submitted"
     ai_deliberated = "AI Deliberated"
     approved = "Underwriter Approved"
+    approving = "Approving"  # chain transactions in progress
     funded = "Funded"
     closed = "Closed"
     declined = "Declined"
@@ -61,6 +62,9 @@ class Application(ApplicationForm):
     auditHash: str | None = None
     tokenId: int | None = None
     txHash: str | None = None
+    auditTxHash: str | None = None
+    auditRecord: str | None = None        # exact JSON text that was hashed
+    approvedBy: str | None = None         # underwriter's user ID
     createdAt: datetime
     updatedAt: datetime | None = None
 
@@ -123,13 +127,8 @@ class StressTest(StressTestCreate):
     createdAt: datetime
 
 class ApprovalIn(BaseModel):
-    """Loan terms and decision records for an approval.
-    TODO: load these from Firestore using app_id instead of the request body."""
+    # The underwriter's decision. Everything else (borrower, property,
+    # deposit, term) is loaded from Firestorethe underwriter comes from the login token.
 
-    borrowerId: str
-    principal: float = Field(gt=0)
     aprPercent: float = Field(ge=0, le=100)
-    termMonths: int = Field(gt=0, le=600)
     creditMemo: str = Field(min_length=1)
-    valuation: dict
-    underwriterId: str
