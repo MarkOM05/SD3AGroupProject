@@ -47,7 +47,7 @@ def approve_loan(audit_json):
     audit_hash = hash_record(audit_json)
     # Anonymise the borrower: only a salted hash goes on the public chain
     salt = os.environ["BORROWER_ID_SALT"]
-    borrower_id = hashlib.sha256((salt + loan.borrowerId).encode()).digest()
+    borrower_id = hashlib.sha256((salt + loan["borrowerId"]).encode()).digest()
 
     with lock:
         # Mint the loan note NFT with the loan's terms
