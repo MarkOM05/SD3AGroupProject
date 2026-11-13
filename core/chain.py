@@ -26,14 +26,15 @@ lock = threading.Lock()
 
 def send(function_call):
     # Sign a transaction with our key, send it, and wait until it's in a block.
-    tx = function_call.build_transaction(
-        {
-            "from": account.address,
-            "nonce": w3.eth.get_transaction_count(account.address, "pending"),
-        }
-    )
+    global next_nonce
+    chain_nonce = w3.eth.get_transaction_count(account.address, "pending")
+    nonce = max(chain_nonce, next_nonce)  # never go backwards
+
+    tx = function_call.build_transaction({"from": account.address, "nonce": nonce})
     signed = account.sign_transaction(tx)
     tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+
+    next_nonce = nonce + 1
     return w3.eth.wait_for_transaction_receipt(tx_hash)
 
 def hash_record(audit_json):
