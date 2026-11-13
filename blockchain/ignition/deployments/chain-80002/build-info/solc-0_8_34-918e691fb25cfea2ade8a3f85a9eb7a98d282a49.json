@@ -1,0 +1,49 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_34-918e691fb25cfea2ade8a3f85a9eb7a98d282a49",
+  "solcVersion": "0.8.34",
+  "solcLongVersion": "0.8.34+commit.80d5c536",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.21.2"
+  },
+  "userSourceNameMap": {
+    "contracts/HashRegistry.sol": "project/contracts/HashRegistry.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "osaka",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/HashRegistry.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.24;\r\n\r\ncontract HashRegistry {\r\n    mapping(uint256 => bytes32) public hashes;\r\n\r\n    event HashCommitted(uint256 indexed recordId, bytes32 fileHash, address committedBy);\r\n\r\n    function commit(uint256 recordId, bytes32 fileHash) external {\r\n        require(fileHash != bytes32(0), \"empty hash\");\r\n        require(hashes[recordId] == bytes32(0), \"already committed\");\r\n        hashes[recordId] = fileHash;\r\n        emit HashCommitted(recordId, fileHash, msg.sender);\r\n    }\r\n}"
+      }
+    }
+  }
+}

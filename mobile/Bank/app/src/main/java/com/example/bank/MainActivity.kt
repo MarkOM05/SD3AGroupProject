@@ -55,7 +55,7 @@ data class LoanResponse(
     val approvalLikelihood: String)
 
 interface BankApi {
-    @POST("/api/calculate")
+    @POST(BASE_URL + "calculate")
     suspend fun calculateLoan(@Body request: LoanRequest): LoanResponse
 }
 
