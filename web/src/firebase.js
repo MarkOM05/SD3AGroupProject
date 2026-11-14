@@ -2,7 +2,6 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Your group's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBTEI7vj2MQcvoDaQAE7NsZHHk8wY5hi4E",
   authDomain: "alagenticlender.firebaseapp.com",
@@ -13,10 +12,8 @@ const firebaseConfig = {
   measurementId: "G-4X5DW8DZCT"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 

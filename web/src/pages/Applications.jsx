@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 const API_BASE_URL = "https://sd3agroupproject.onrender.com";
 
@@ -116,11 +116,27 @@ function Applications() {
 				}
 
 				const snapshot = await getDocs(applicationsQuery);
+				const applicationList = await Promise.all(
+					snapshot.docs.map(async (document) => {
+						const application = document.data();
 
-				const applicationList = snapshot.docs.map((document) => ({
-					...document.data(),
-					id: document.id
-				}));
+						const userDocument = await getDoc(
+							doc(db, "users", application.borrowerId)
+						);
+
+						let applicantName = "Unknown Applicant";
+
+						if (userDocument.exists()) {
+							applicantName = userDocument.data().name;
+						}
+
+						return {
+							...application,
+							id: document.id,
+							applicantName: applicantName
+						};
+					})
+				);
 
 				setApplications(applicationList);
 				console.log("Applications loaded:", applicationList);
@@ -218,7 +234,7 @@ function Applications() {
 
 				{!loading && applications.map((application) => (
 					<tr key={application.id}>
-						<td>{application.borrowerId}</td>
+						<td>{application.applicantName}</td> {/* All Applicants share the same name as all Borrower IDs are the same*/}
 						<td>{application.property && application.property.askingPrice}</td>
 						<td>{application.property && application.property.county}</td>
 						<td>{application.ltv || "N/A"}</td>
@@ -238,7 +254,7 @@ function Applications() {
 				<article className="popup-content">
 					<h2>Application Details</h2>
 
-					<p><strong>Applicant:</strong> {selectedApplication.borrowerId}</p>
+					<p><strong>Applicant:</strong> {selectedApplication.applicantName}</p>
 					<p><strong>Loan amount:</strong> {selectedApplication.property && selectedApplication.property.askingPrice}</p>
 					<p><strong>County:</strong> {selectedApplication.property && selectedApplication.property.county}</p>
 					<p><strong>Status:</strong> {selectedApplication.status}</p>
