@@ -25,7 +25,7 @@ blockchain/cache/
 # Android (google-services.json is shared privately, not via Git)
 mobile/**/build/
 mobile/.gradle/
-mobile/local.properties
+mobile/Bank/local.properties
 mobile/**/google-services.json
 *.iml
 .idea/
