@@ -33,7 +33,7 @@ class ApplicationForm(BaseModel):     # borrowerId comes from the login token
     debts: int = Field(ge=0)
     deposit: int = Field(ge=0)
     termYears: int = Field(ge=1, le=40)
-    property: Property
+    propertyValue: int = Field(gt=0)
 
 class AffordabilityIn(BaseModel):
     income: int = Field(gt=0)

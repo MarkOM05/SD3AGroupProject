@@ -1,11 +1,11 @@
 import json
 from typing import Literal, Optional
 
-from fastapi import BackgroundTasks, FastAPI, Header, HTTPException
+from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 import chain
-import store
+from store import SERVER_TIMESTAMP, db, require_role
 from models import (
     AffordabilityIn,
     ApplicationForm,
@@ -32,9 +32,15 @@ def health():
 # ---------- applications ----------
 
 @app.post("/applications", status_code=201)
-def create_application(body: ApplicationForm, authorization: Optional[str] = Header(None)):
-    # TODO: take borrowerId from the verified login token, save to Firestore
-    return {"id": "app_1", "status": "Submitted"}
+def create_application(form: ApplicationForm, authorization: Optional[str] = Header(None)):
+    borrower_id = require_role(authorization, "borrower")
+    db.collection("applications").add({
+        **form.model_dump(),
+        "borrowerId": borrower_id,
+        "status": "submitted",
+        "createdAt": SERVER_TIMESTAMP,
+    })
+    return Response(status_code=201)
 
 @app.post("/valuation")
 def valuation(body: PropertySpec, authorization: Optional[str] = Header(None)):
