@@ -1,0 +1,76 @@
+{
+  "_format": "hh3-artifact-1",
+  "contractName": "HashRegistry",
+  "sourceName": "contracts/HashRegistry.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "recordId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "fileHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "committedBy",
+          "type": "address"
+        }
+      ],
+      "name": "HashCommitted",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "recordId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "fileHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "commit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "hashes",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080604052348015600e575f5ffd5b506101c98061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610034575f3560e01c8063501895ae14610038578063f2f0387714610069575b5f5ffd5b61005761004636600461015c565b5f6020819052908152604090205481565b60405190815260200160405180910390f35b61007c610077366004610173565b61007e565b005b806100bd5760405162461bcd60e51b815260206004820152600a6024820152690cadae0e8f240d0c2e6d60b31b60448201526064015b60405180910390fd5b5f828152602081905260409020541561010c5760405162461bcd60e51b8152602060048201526011602482015270185b1c9958591e4818dbdb5b5a5d1d1959607a1b60448201526064016100b4565b5f82815260208181526040918290208390558151838152339181019190915283917f2d3b177a82abe3658050a59907574a4787c2863919ddcd975fba727bb43eb842910160405180910390a25050565b5f6020828403121561016c575f5ffd5b5035919050565b5f5f60408385031215610184575f5ffd5b5050803592602090910135915056fea26469706673582212200b0fec86b113fa3926b02aa2acf2e17f69fa235e6891c4f1cd6215bbd921f39664736f6c63430008220033",
+  "deployedBytecode": "0x608060405234801561000f575f5ffd5b5060043610610034575f3560e01c8063501895ae14610038578063f2f0387714610069575b5f5ffd5b61005761004636600461015c565b5f6020819052908152604090205481565b60405190815260200160405180910390f35b61007c610077366004610173565b61007e565b005b806100bd5760405162461bcd60e51b815260206004820152600a6024820152690cadae0e8f240d0c2e6d60b31b60448201526064015b60405180910390fd5b5f828152602081905260409020541561010c5760405162461bcd60e51b8152602060048201526011602482015270185b1c9958591e4818dbdb5b5a5d1d1959607a1b60448201526064016100b4565b5f82815260208181526040918290208390558151838152339181019190915283917f2d3b177a82abe3658050a59907574a4787c2863919ddcd975fba727bb43eb842910160405180910390a25050565b5f6020828403121561016c575f5ffd5b5035919050565b5f5f60408385031215610184575f5ffd5b5050803592602090910135915056fea26469706673582212200b0fec86b113fa3926b02aa2acf2e17f69fa235e6891c4f1cd6215bbd921f39664736f6c63430008220033",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "immutableReferences": {},
+  "inputSourceName": "project/contracts/HashRegistry.sol",
+  "buildInfoId": "solc-0_8_34-918e691fb25cfea2ade8a3f85a9eb7a98d282a49"
+}

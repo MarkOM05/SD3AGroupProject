@@ -1,0 +1,700 @@
+/* Main dashboard */
+.dashboard {
+  padding: 30px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+  color: #263445;
+  font-family: Arial, sans-serif;
+}
+
+/* Dashboard heading */
+.dashboard-header {
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.dashboard-header h2 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: #172b4d;
+}
+
+.dashboard-header p {
+  color: #718096;
+  font-size: 15px;
+}
+
+/* Statistics cards */
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 10px;
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.stat-card h3 {
+  font-size: 15px;
+  font-weight: 500;
+  color: #718096;
+  margin-bottom: 15px;
+}
+
+.stat-card p {
+  font-size: 28px;
+  font-weight: bold;
+  color: #172b4d;
+  margin: 0;
+}
+
+/* Dashboard content panels */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.dashboard-panel {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 10px;
+  min-height: 200px;
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.dashboard-panel h3 {
+  color: #172b4d;
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.dashboard-panel p {
+  color: #718096;
+  font-size: 14px;
+}
+
+
+/*Header*/
+.main-header {
+  display: flex;
+  align-items: center;
+  padding: 20px 30px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5eaf0;
+}
+
+/* Website branding */
+.site-logo {
+  color: #172b4d;
+  font-size: 24px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+
+/*Navigation menu*/
+#navigation {
+  list-style-type: none;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin: 0;
+  padding: 0;
+}
+
+#navigation li {
+  display: inline;
+}
+
+#navigation li a {
+  text-decoration: none;
+  color: #718096;
+  font-size: 15px;
+}
+
+#navigation li a:hover {
+  color: #2563eb;
+}
+
+#navigation li a.active {
+  color: #2563eb;
+  font-weight: bold;
+  border-bottom: 2px solid #2563eb;
+  padding-bottom: 8px;
+}
+/* Authentication buttons */
+
+#authentication {
+  list-style: none;
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+/* Authentication links */
+#authentication a,
+#authentication button {
+  text-decoration: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Sign In */
+#SignInBtn {
+  color: #2563eb;
+  border: 1px solid #2563eb;
+}
+
+#SignInBtn:hover {
+  background-color: #2563eb;
+  color: white;
+  transition: 0.3s ease;
+}
+
+/* Sign Up */
+#SignUpBtn {
+  background-color: #2563eb;
+  color: white;
+}
+
+#SignUpBtn:hover {
+  background-color: #1d4ed8;
+  transition: 0.3s ease;
+}
+
+/* Sign Out */
+#SignOutBtn {
+  background-color: white;
+  color: #dc2626;
+  border: 1px solid #dc2626;
+}
+
+#SignOutBtn:hover {
+  background-color: #dc2626;
+  color: white;
+  transition: 0.3s ease;
+}
+
+.main-navigation {
+  margin-left: auto;
+}
+
+.authentication-navigation {
+  margin-left: 25px;
+}
+
+/*Footer*/
+.footer {
+  text-align: center;
+  padding: 20px;
+  margin-top: 30px;
+  font-size: 14px;
+}
+
+.footer p {
+  margin: 0;
+}
+
+/*Applications page*/
+.applications-page {
+  padding: 30px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+  color: #263445;
+  font-family: Arial, sans-serif;
+}
+
+.page-header {
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.page-header h2 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: #172b4d;
+}
+
+.page-header p {
+  color: #718096;
+  font-size: 15px;
+}
+/* Applications summary cards */
+.application-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.application-stats .stat-card {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 10px;
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.application-stats .stat-card h3 {
+  font-size: 15px;
+  font-weight: 500;
+  color: #718096;
+  margin-bottom: 15px;
+}
+
+.application-stats .stat-card p {
+  font-size: 28px;
+  font-weight: bold;
+  color: #172b4d;
+  margin: 0;
+}
+/* Applications search controls */
+
+.application-controls {
+  background-color: #ffffff;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e5eaf0;
+  border-radius: 10px;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-form label {
+  color: #263445;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.search-form input {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 220px;
+}
+
+.search-form button:first-of-type {
+  margin-left: auto;
+}
+
+.search-form button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  background-color: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.search-form button:hover {
+  background-color: #1d4ed8;
+}
+
+/* Applications table */
+
+.applications-table {
+  background-color: #ffffff;
+  padding: 20px;
+  border: 1px solid #e5eaf0;
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.applications-table table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.applications-table th {
+  background-color: #f5f7fa;
+  color: #526174;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 15px;
+  border-bottom: 1px solid #e5eaf0;
+}
+
+.applications-table td {
+  color: #263445;
+  font-size: 14px;
+  padding: 16px 15px;
+  border-bottom: 1px solid #e5eaf0;
+}
+
+.applications-table tr:last-child td {
+  border-bottom: none;
+}
+
+.applications-table td button {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.applications-table td button:hover {
+  background-color: #1d4ed8;
+}
+
+/* Application pop-up overlay */
+
+.application-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Pop-up window */
+
+.popup-content {
+  background-color: #ffffff;
+  width: 450px;
+  max-width: 90%;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+.popup-content h2 {
+  color: #172b4d;
+  margin-bottom: 20px;
+}
+
+.popup-content p {
+  color: #263445;
+  margin-bottom: 20px;
+}
+
+.popup-content button {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ai-analysis-page {
+  padding: 30px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+  color: #263445;
+  font-family: Arial, sans-serif;
+}
+/* AI Analysis Page */
+
+.ai-analysis-page {
+  padding: 30px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+  color: #263445;
+  font-family: Arial, sans-serif;
+}
+
+.ai-analysis-page .page-header {
+  margin-bottom: 25px;
+}
+
+.ai-analysis-page .page-header h2 {
+  font-size: 28px;
+  color: #172b4d;
+  margin-bottom: 8px;
+}
+
+.ai-analysis-page .page-header p {
+  color: #718096;
+  font-size: 15px;
+}
+
+/* Application selector */
+
+.analysis-selection {
+  margin-bottom: 25px;
+}
+
+.analysis-selection label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.analysis-selection select {
+	display: block;
+	width: 450px;
+	max-width: 100%;
+	padding: 12px;
+	border: 1px solid #cbd5e0;
+	border-radius: 6px;
+	background-color: #ffffff;
+	color: #263445;
+	font-size: 14px;
+}
+
+/* Borrower summary */
+
+.borrower-analysis {
+  margin-bottom: 30px;
+}
+
+.borrower-analysis h3 {
+  font-size: 20px;
+  margin: 0 0 12px;
+  color: #172b4d;
+  text-align: left;
+}
+
+.borrower-analysis table {
+  width: 100%;
+  max-width: 650px;
+  border-collapse: collapse;
+  background-color: #ffffff;
+}
+
+.borrower-analysis th,
+.borrower-analysis td {
+  padding: 15px;
+  border: 1px solid #e5eaf0;
+  text-align: left;
+}
+
+.borrower-analysis th {
+  background-color: #e8edf5;
+  color: #172b4d;
+}
+
+/* AI agent cards */
+
+.agent-results {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.agent-card {
+  background-color: #ffffff;
+  padding: 22px;
+  border: 1px solid #e5eaf0;
+  border-radius: 10px;
+}
+
+.agent-card h3 {
+  color: #172b4d;
+  font-size: 17px;
+  text-decoration: underline;
+  margin: 0 0 12px;
+}
+
+.agent-card p {
+  color: #526174;
+  font-size: 15px;
+  margin: 0;
+}
+
+/* Completion message */
+
+.analysis-complete {
+  background-color: #ffffff;
+  padding: 22px;
+  border: 1px solid #e5eaf0;
+  border-radius: 8px;
+}
+
+.analysis-complete h3 {
+  color: #172b4d;
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+
+.analysis-complete p {
+  color: #526174;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+
+/* Blockchain Page */
+
+.blockchain-page {
+  padding: 30px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+  color: #263445;
+  font-family: Arial, sans-serif;
+}
+
+.blockchain-page .page-header {
+  margin-bottom: 30px;
+}
+
+.blockchain-page .page-header h2 {
+  font-size: 28px;
+  color: #172b4d;
+  margin-bottom: 8px;
+}
+
+.blockchain-page .page-header p {
+  color: #718096;
+  font-size: 15px;
+}
+
+/* Summary Cards */
+
+.blockchain-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.blockchain-stats .stat-card {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 10px;
+  border: 1px solid #e5eaf0;
+}
+
+.blockchain-stats .stat-card h3 {
+  font-size: 15px;
+  font-weight: 500;
+  color: #718096;
+  margin-bottom: 15px;
+}
+
+.blockchain-stats .stat-card p {
+  font-size: 28px;
+  font-weight: bold;
+  color: #172b4d;
+  margin: 0;
+}
+
+/* Blockchain Records */
+
+.blockchain-records {
+  background-color: #ffffff;
+  padding: 24px;
+  border: 1px solid #e5eaf0;
+  border-radius: 10px;
+}
+
+.blockchain-records h3 {
+  color: #172b4d;
+  font-size: 18px;
+  margin: 0 0 20px;
+}
+
+.blockchain-records table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.blockchain-records th,
+.blockchain-records td {
+  padding: 15px;
+  border-bottom: 1px solid #e5eaf0;
+  text-align: left;
+}
+
+.blockchain-records th {
+  background-color: #e8edf5;
+  color: #172b4d;
+  font-size: 14px;
+}
+
+.blockchain-records td {
+  color: #526174;
+  font-size: 14px;
+}
+
+.blockchain-records tbody tr:hover {
+  background-color: #f5f7fa;
+}
+
+/* View Button */
+
+.blockchain-records button {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.3s ease;
+}
+
+.blockchain-records button:hover {
+  background-color: #1d4ed8;
+}
+
+/* Selected Loan Popup */
+
+.loan-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loan-popup-content {
+  background-color: #ffffff;
+  width: 450px;
+  max-width: 90%;
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e0;
+}
+
+.loan-popup-content h2 {
+  color: #172b4d;
+  font-size: 22px;
+  margin-bottom: 25px;
+}
+
+.loan-popup-content button {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.loan-popup-content button:hover {
+  background-color: #1d4ed8;
+}

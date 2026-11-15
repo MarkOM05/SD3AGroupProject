@@ -1,0 +1,12 @@
+services:
+  chain:
+    image: node:lts
+    user: "1000:1000"
+    working_dir: /app
+    environment:
+      CI: "true"
+    volumes:
+      - .:/app
+    command: sh -c "npm install && npx hardhat node --hostname 0.0.0.0"
+    ports:
+      - "8545:8545"
