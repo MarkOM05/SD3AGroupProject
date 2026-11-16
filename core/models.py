@@ -132,3 +132,7 @@ class ApprovalIn(BaseModel):
 
     aprPercent: float = Field(ge=0, le=100)
     creditMemo: str = Field(min_length=1)
+
+class CheckoutRequest(BaseModel):
+    applicationId: str
+    purpose: str

@@ -1,27 +1,41 @@
 import json
+import os
 from typing import Literal, Optional
 
-from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Response
+from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 import chain
+import store
 from store import SERVER_TIMESTAMP, db, require_role
+
+import stripe
+
 from models import (
     AffordabilityIn,
     ApplicationForm,
     PropertySpec,
     Status,
-    StressTestCreate, ApprovalIn,
+    StressTestCreate,
+    ApprovalIn,
+    CheckoutRequest
 )
+
+stripe.api_key = os.environ["STRIPE_API_KEY"]
 
 app = FastAPI(title="AL Core API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://alagenticlender.onrender.com"],  # TODO add deployed web app url
+    allow_origins=["https://alagenticlender.onrender.com"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Payment prices
+PRICES = {
+    "fast_track_appraisal": 4900,
+}
 
 
 @app.get("/health")
@@ -153,10 +167,68 @@ def stress_test(body: StressTestCreate):
 
 
 @app.post("/payments/create-intent")
-def create_payment_intent():
-    raise HTTPException(status_code=501, detail="Not implemented in Sprint 1")
+def create_payment_intent(body: CheckoutRequest, authorization: Optional[str] = Header(None)):
+    uid = require_role(authorization, "applicant")  # use whichever role pays
 
+    amount = PRICES.get(body.purpose)
+    if amount is None:
+        raise HTTPException(400, "Unknown purpose")
+
+    app_doc = db.collection("applications").document(body.applicationId).get()
+    if not app_doc.exists or app_doc.get("userId") != uid:
+        raise HTTPException(403, "Not your application")
+
+    intent = stripe.PaymentIntent.create(
+        amount=amount,
+        currency="eur",
+        automatic_payment_methods={"enabled": True},
+        metadata={
+            "userId": uid,
+            "applicationId": body.applicationId,
+            "purpose": body.purpose,
+        },
+    )
+
+    db.collection("payments").document(intent.id).set({
+        "amount": amount,
+        "currency": "eur",
+        "provider": "stripe",
+        "purpose": body.purpose,
+        "applicationId": body.applicationId,
+        "userId": uid,
+        "status": "pending",
+        "stripePaymentIntentId": intent.id,
+        "createdAt": store.SERVER_TIMESTAMP,
+    })
+
+    return {"clientSecret": intent.client_secret}
+
+def update_payment(intent: dict, status: str):
+    ref = db.collection("payments").document(intent["id"])
+    ref.set({
+        "status": status,
+        "updatedAt": store.SERVER_TIMESTAMP,
+    }, merge=True)
+
+    if status == "succeeded" and intent["metadata"].get("purpose") == "fast_track_appraisal":
+        db.collection("applications").document(intent["metadata"]["applicationId"]).set(
+            {"fastTrack": True}, merge=True
+        )
 
 @app.post("/payments/webhook")
-def payments_webhook():
-    raise HTTPException(status_code=501, detail="Not implemented in Sprint 1")
+async def stripe_webhook(request: Request):
+    payload = await request.body()
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, request.headers.get("stripe-signature"), os.environ["WEBHOOK_SECRET"]
+        )
+    except (ValueError, stripe.SignatureVerificationError):
+        raise HTTPException(400, "Invalid webhook")
+
+    intent = event["data"]["object"]
+    if event["type"] == "payment_intent.succeeded":
+        await update_payment(intent, "succeeded")
+    elif event["type"] == "payment_intent.payment_failed":
+        await update_payment(intent, "failed")
+
+    return {"received": True}
