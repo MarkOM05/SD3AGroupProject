@@ -47,6 +47,7 @@ import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -56,6 +57,8 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.Response
+import retrofit2.http.Header
 import java.util.concurrent.TimeUnit
 
 // =============================================================================
@@ -84,7 +87,7 @@ data class ApplicationForm(
     val debts: Int,
     val deposit: Int,
     val termYears: Int,
-    val property: PropertyPayload
+    val propertyValue: Int
 )
 
 data class PropertySpec(
@@ -114,8 +117,11 @@ interface BankApi {
     @GET("/health")
     suspend fun health(): String
 
-    @POST("/applications")
-    suspend fun createApplication(@Body form: ApplicationForm): String
+    @POST("applications")
+    suspend fun createApplication(
+        @Header("Authorization") auth: String,
+        @Body form: ApplicationForm
+    ): Response<Unit>
 
     @POST("/valuation")
     suspend fun valuation(@Body spec: PropertySpec): String
@@ -600,19 +606,15 @@ fun Affordability(
                             debts = debtInt,
                             deposit = depositInt,
                             termYears = termInt.coerceIn(1, 40),
-                            property = PropertyPayload(
-                                county = "Dublin",
-                                sizeSqm = 95,
-                                bedrooms = 3,
-                                type = "Semi-D",
-                                berRating = "B2",
-                                askingPrice = propertyValueInt
-                            )
+                            propertyValue = propertyValueInt
                         )
-                        val appIdRaw = RetrofitClient.api.createApplication(form)
-                        val appId = appIdRaw.trim('"', ' ', '\n')
-                        SessionState.currentApplicationId = appId
-                        Toast.makeText(context, "Application submitted: $appId", Toast.LENGTH_LONG).show()
+                        val token = FirebaseAuth.getInstance().currentUser!!.getIdToken(false).await().token
+                        val res = RetrofitClient.api.createApplication("Bearer $token", form)
+                        if (res.isSuccessful) {
+                            Toast.makeText(context, "Application submitted", Toast.LENGTH_LONG).show()
+                        } else {
+                            errorMsg = "Submit failed (${res.code()}): ${res.errorBody()?.string()}"
+                        }
                     } catch (e: Exception) {
                         errorMsg = "Submit failed: ${e.message}"
                     } finally {
