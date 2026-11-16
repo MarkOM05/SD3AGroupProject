@@ -48,13 +48,13 @@ def health():
 @app.post("/applications", status_code=201)
 def create_application(form: ApplicationForm, authorization: Optional[str] = Header(None)):
     borrower_id = require_role(authorization, "borrower")
-    db.collection("applications").add({
+    _, ref = db.collection("applications").add({
         **form.model_dump(),
         "borrowerId": borrower_id,
         "status": "submitted",
         "createdAt": SERVER_TIMESTAMP,
     })
-    return Response(status_code=201)
+    return {"applicationId": ref.id}
 
 @app.post("/valuation")
 def valuation(body: PropertySpec, authorization: Optional[str] = Header(None)):
