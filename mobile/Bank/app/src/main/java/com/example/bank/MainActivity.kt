@@ -3,6 +3,7 @@ package com.example.bank
 import android.app.Activity
 import android.content.Context
 import android.os.Bundle
+import android.se.omapi.Session
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -110,6 +111,9 @@ data class StressTestCreate(
     val rateShockBps: Int
 )
 
+data class CreatePaymentIntentRequest(val applicationId: String, val purpose: String)
+data class CreatePaymentIntentResponse(val clientSecret: String)
+
 // =============================================================================
 //  Bank API — matches https://sd3agroupproject.onrender.com/docs
 // =============================================================================
@@ -148,7 +152,10 @@ interface BankApi {
     suspend fun stressTest(@Body body: StressTestCreate): String
 
     @POST("/payments/create-intent")
-    suspend fun createPaymentIntent(): String
+    suspend fun createPaymentIntent(
+        @Header("Authorization") auth: String,
+        @Body body: CreatePaymentIntentRequest
+    ): CreatePaymentIntentResponse
 }
 
 // =============================================================================
@@ -834,6 +841,8 @@ fun FairPriceCheckerScreen(
 // =============================================================================
 //  Payments — Stripe PaymentSheet
 // =============================================================================
+private const val PAYMENT_PURPOSE = "appraisal_fee" // must match a key in PRICES on the backend
+
 @Composable
 fun PaymentsScreen(
     navController: NavController,
@@ -844,10 +853,49 @@ fun PaymentsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    val applicationId = SessionState.currentApplicationId ?: "—"
-    var amountCents by remember { mutableStateOf(15000) } // €150 default; overwritten by server when available
+    val applicationId = SessionState.currentApplicationId
+    var amountCents by remember { mutableStateOf(15000) } // display only; server sets the real price
     var status by remember { mutableStateOf("Not paid") }
     var isPaying by remember { mutableStateOf(false) }
+
+    // Listen to Firestore so status reflects what the webhook actually wrote
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+    DisposableEffect(applicationId, uid) {
+        if (applicationId == null || uid == null) return@DisposableEffect onDispose { }
+        val registration = FirebaseFirestore.getInstance()
+            .collection("payments")
+            .whereEqualTo("userId", uid)               // needed for the security rule to allow the read
+            .whereEqualTo("applicationId", applicationId)
+            .whereEqualTo("purpose", PAYMENT_PURPOSE)
+            .addSnapshotListener { snapshot, _ ->
+                val docs = snapshot?.documents.orEmpty()
+                status = when {
+                    docs.any { it.getString("status") == "succeeded" } -> "Paid"
+                    docs.any { it.getString("status") == "pending" } && isPaying -> "Processing…"
+                    else -> if (status == "Processing…") status else "Not paid"
+                }
+                docs.firstOrNull()?.getLong("amount")?.let { amountCents = it.toInt() }
+            }
+        onDispose { registration.remove() }
+    }
+
+    // Must be created during composition, not inside onClick
+    val paymentSheet = remember {
+        PaymentSheet.Builder { result ->
+            isPaying = false
+            when (result) {
+                is PaymentSheetResult.Completed -> {
+                    // Webhook will flip Firestore to "succeeded"; listener above updates to "Paid"
+                    if (status != "Paid") status = "Processing…"
+                    Toast.makeText(context, "Payment successful", Toast.LENGTH_SHORT).show()
+                }
+                is PaymentSheetResult.Canceled ->
+                    Toast.makeText(context, "Payment cancelled – stays pending", Toast.LENGTH_SHORT).show()
+                is PaymentSheetResult.Failed ->
+                    Toast.makeText(context, "Payment failed: ${result.error.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }.build()
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())
@@ -857,12 +905,7 @@ fun PaymentsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                "Application Fee",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = textColor
-            )
+            Text("Application Fee", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
             IconButton(onClick = { isDarkMode = !isDarkMode }) {
                 Icon(
                     imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
@@ -880,7 +923,7 @@ fun PaymentsScreen(
             Column(Modifier.padding(16.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Application", color = textColor)
-                    Text("#$applicationId", color = textColor)
+                    Text("#${applicationId ?: "—"}", color = textColor)
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -906,51 +949,21 @@ fun PaymentsScreen(
         if (status != "Paid") {
             Button(
                 onClick = {
-                    if (isPaying) return@Button
+                    if (isPaying || applicationId == null) return@Button
                     isPaying = true
                     scope.launch {
                         try {
-                            // Step 1: Server creates PaymentIntent and returns a client secret
-                            val raw = RetrofitClient.api.createPaymentIntent()
-                            val clientSecret = raw.trim('"', ' ', '\n')
+                            val token = FirebaseAuth.getInstance().currentUser
+                                ?.getIdToken(false)?.await()?.token
+                                ?: throw IllegalStateException("Not logged in")
 
-                            // Step 2: Initialize Stripe with Publishable Key
-                            PaymentConfiguration.init(
-                                context, "pk_test_51UUIWRCPs2UWh2CjJRtml8dddBIskb7XEL9WpJuxN1AqwqNDwRXVMFPrKrOLNgHUvoZzpkZuWCvGvU9ZFUaCqBW700umcKHdxg"
+                            val res = RetrofitClient.api.createPaymentIntent(
+                                "Bearer $token",
+                                CreatePaymentIntentRequest(applicationId, PAYMENT_PURPOSE)
                             )
 
-                            // Step 3: Create the PaymentSheet instance and handle the result callback
-                            val paymentSheet = PaymentSheet.Builder { result ->
-                                isPaying = false
-                                when (result) {
-                                    is PaymentSheetResult.Completed -> {
-                                        status = "Paid"
-                                        Toast.makeText(
-                                            context,
-                                            "Payment successful",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                    is PaymentSheetResult.Canceled -> {
-                                        Toast.makeText(
-                                            context,
-                                            "Payment cancelled – stays pending",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                    is PaymentSheetResult.Failed -> {
-                                        Toast.makeText(
-                                            context,
-                                            "Payment failed: ${result.error.message}",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-                                    }
-                                }
-                            }.build(context as ComponentActivity) // <-- Fixed: Added Activity argument
-
-                            // Step 4: Present the sheet using the instance
                             paymentSheet.presentWithPaymentIntent(
-                                paymentIntentClientSecret = clientSecret,
+                                paymentIntentClientSecret = res.clientSecret,
                                 configuration = PaymentSheet.Configuration(
                                     merchantDisplayName = "AL Agentic Lender"
                                 )
@@ -965,7 +978,7 @@ fun PaymentsScreen(
                         }
                     }
                 },
-                enabled = !isPaying,
+                enabled = !isPaying && applicationId != null && status != "Processing…",
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
             ) {
