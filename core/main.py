@@ -21,7 +21,7 @@ from models import (
     CheckoutRequest
 )
 
-stripe.api_key = os.environ["STRIPE_API_KEY"]
+stripe.api_key = os.environ["STRIPE_PRIVATE_KEY"]
 
 app = FastAPI(title="AL Core API")
 
