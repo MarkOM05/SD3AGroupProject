@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import {
 	createUserWithEmailAndPassword,
 	signInWithEmailAndPassword,
-	updateProfile
+	updateProfile,
+	signOut
 } from "firebase/auth";
-import { auth } from "../firebase";
-//import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 function Auth() {
 	const [isSignUp, setIsSignUp] = useState(false);
@@ -35,16 +36,34 @@ function Auth() {
 			  displayName: name
 			});
 
-			/*await setDoc(doc(db, "demoProfiles", userCredential.user.uid), {
+			await setDoc(doc(db, "users", userCredential.user.uid), {
 			  name: name,
 			  email: email,
-			  selectedRole: role,
+			  role: role,
 			  createdAt: new Date()
-			});*/
-		  } else {
-			await signInWithEmailAndPassword(auth, email, password);
-		  }
-		  navigate("/dashboard");
+			});
+			} else {
+				const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+				const userDocument = await getDoc(
+					doc(db, "users", userCredential.user.uid)
+				);
+
+				if (userDocument.exists()) {
+					const userRole = userDocument.data().role;
+					if (userRole !== "broker" && userRole !== "underwriter") {
+						await signOut(auth);
+						setError("Your account does not have permission to log in.");
+						return;
+					}
+				} else {
+					await signOut(auth);
+					setError("Your account could not be verified.");
+					return;
+				}
+			}
+
+		navigate("/dashboard");
 
 		} catch (error) {
 		  setError(error.message);
