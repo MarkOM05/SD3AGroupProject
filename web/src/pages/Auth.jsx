@@ -28,29 +28,30 @@ function Auth() {
 		setLoading(true);
 
 		try {
-		  if (isSignUp) {
-			const userCredential =
-			  await createUserWithEmailAndPassword(auth, email, password);
+			if (isSignUp) {
+				const userCredential =
+				await createUserWithEmailAndPassword(auth, email, password);
 
-			await updateProfile(userCredential.user, {
-			  displayName: name
-			});
+				await updateProfile(userCredential.user, {
+					displayName: name
+				});
 
-			await setDoc(doc(db, "users", userCredential.user.uid), {
-			  name: name,
-			  email: email,
-			  role: role,
-			  createdAt: new Date()
-			});
+				await setDoc(doc(db, "users", userCredential.user.uid), {
+					name: name,
+					email: email,
+					role: role,
+					createdAt: new Date()
+				});
 			} else {
 				const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-				const userDocument = await getDoc(
-					doc(db, "users", userCredential.user.uid)
-				);
-
+				const userDocument = await getDoc(doc(db, "users", userCredential.user.uid));
+				{/*console.log("User UID:", userCredential.user.uid);
+				console.log("Document exists:", userDocument.exists());*/}
+				
 				if (userDocument.exists()) {
 					const userRole = userDocument.data().role;
+					{/*console.log("User role:", userDocument.data().role);*/}
 					if (userRole !== "broker" && userRole !== "underwriter") {
 						await signOut(auth);
 						setError("Your account does not have permission to log in.");
@@ -62,9 +63,7 @@ function Auth() {
 					return;
 				}
 			}
-
-		navigate("/dashboard");
-
+			navigate("/dashboard");
 		} catch (error) {
 		  setError(error.message);
 
