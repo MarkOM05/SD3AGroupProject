@@ -9,6 +9,7 @@ import chain
 import store
 from store import SERVER_TIMESTAMP, db, require_role
 from affordibility import check_affordability
+from affordibility_agent import run_affordability_agent
 
 import stripe
 
@@ -149,19 +150,21 @@ def affordability_estimate(body: AffordabilityIn):
 
 @app.post("/affordability")
 def affordability(body: AffordabilityIn, authorization: Optional[str] = Header(None)):
-    # TODO: run the LangGraph affordability agent
-    return {
-        "affordable": True,
-        "figures": {
-            "netMonthlyIncome": 5200,
-            "repaymentBase": 1530,
-            "repaymentStressed": 1890,
-            "surplus": 2410,
-            "loanToIncome": 3.8,
-        },
-        "reasons": ["Loan is within the borrowing cap", "Surplus is positive at the stressed rate"],
-        "toolTrace": [{"tool": "calc_repayment", "input": {"rate": 4.0}, "output": {"monthly": 1530}}],
-    }
+    # the decision and figures come straight from the calculation, not the LLM
+    result = check_affordability(income=body.income, debts=body.debts, deposit=body.deposit,
+                                 propertyValue=body.propertyValue, termYears=body.termYears)
+
+    try:
+        explanation = run_affordability_agent(income=body.income, debts=body.debts,
+                                              deposit=body.deposit,
+                                              property_value=body.propertyValue,
+                                              term_years=body.termYears)
+    except Exception as e:
+        # still return the calculation if the LLM call fails
+        explanation = None
+        result["explanation_error"] = str(e)
+
+    return {**result, "explanation": explanation}
 
 # ---------- Later sprints (not implemented yet) ----------
 
