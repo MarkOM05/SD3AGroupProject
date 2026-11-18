@@ -86,6 +86,8 @@ def approve(app_id: str, body: ApprovalIn, authorization: Optional[str] = Header
         #"property": application["property"],
         "valuation": application.get("mlValuation"),
         #"principal": application["property"]["askingPrice"] - application["deposit"],
+        "property": None,
+        "principal": None,
         "termMonths": application["termYears"] * 12,
         "aprPercent": body.aprPercent,
         "creditMemo": body.creditMemo,
