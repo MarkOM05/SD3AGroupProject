@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import chain
 import store
 from store import SERVER_TIMESTAMP, db, require_role
+from affordibility import check_affordability
 
 import stripe
 
@@ -128,6 +129,10 @@ def verify(app_id: str):
 
 
 # ---------- calculators / models ----------
+
+@app.post("/affordability-estimate")
+def affordability_estimate(body: AffordabilityIn):
+    return check_affordability(**body.model_dump())
 @app.post("/affordability")
 def affordability(body: AffordabilityIn, authorization: Optional[str] = Header(None)):
     # TODO: run the LangGraph affordability agent
