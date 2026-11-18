@@ -60,7 +60,7 @@ def run_affordability_agent(income, debts, deposit, property_value, term_years, 
         description=f"Assess this mortgage application using the Check affordability tool:\n"
                     f"{application}\n"
                     f"Give the decision exactly as the tool returns it, PASS or FAIL, then "
-                    f"explain each check in plain English using the figures. Finish by listing "
+                    f"explain each check in bullet points using the figures. Finish by listing "
                     f"the assumptions the tool made.",
         expected_output="The decision PASS or FAIL, a short explanation of each check, "
                         "and the assumptions used.",
