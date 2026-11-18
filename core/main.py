@@ -49,10 +49,17 @@ def health():
 @app.post("/applications", status_code=201)
 def create_application(form: ApplicationForm, authorization: Optional[str] = Header(None)):
     borrower_id = require_role(authorization, "borrower")
+
+    try:
+        broker_id = store.get_or_assign_broker(borrower_id)
+    except store.NoBrokersAvailable:
+        raise HTTPException(status_code=503, detail="No brokers available")
+
     _, ref = db.collection("applications").add({
         **form.model_dump(),
         "borrowerId": borrower_id,
-        "status": "submitted",
+        "assignedBrokerId": broker_id,
+        "status": "Submitted",
         "createdAt": SERVER_TIMESTAMP,
     })
     return {"applicationId": ref.id}
@@ -83,11 +90,9 @@ def approve(app_id: str, body: ApprovalIn, authorization: Optional[str] = Header
         "income": application["income"],
         "debts": application["debts"],
         "deposit": application["deposit"],
-        #"property": application["property"],
         "valuation": application.get("mlValuation"),
-        #"principal": application["property"]["askingPrice"] - application["deposit"],
         "property": "house",
-        "principal": 250000,
+        "principal": application["propertyValue"] - application["deposit"],
         "termMonths": application["termYears"] * 12,
         "aprPercent": body.aprPercent,
         "creditMemo": body.creditMemo,

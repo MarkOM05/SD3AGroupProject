@@ -5,6 +5,8 @@ import firebase_admin
 from fastapi import HTTPException
 from firebase_admin import auth, credentials, firestore
 from google.cloud.firestore import SERVER_TIMESTAMP, transactional
+import random
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 # Log in to Firebase as the server, using the service account key
 firebase_admin.initialize_app(
@@ -45,3 +47,28 @@ def claim(transaction, ref, allowed_statuses, new_status):
 
     transaction.update(ref, {"status": new_status})
     return application
+
+
+class NoBrokersAvailable(Exception):
+    pass
+
+
+def get_or_assign_broker(borrower_id: str) -> str:
+    user_ref = db.collection("users").document(borrower_id)
+    snap = user_ref.get()
+    broker_id = (snap.to_dict() or {}).get("assignedBrokerId") if snap.exists else None
+    if broker_id:
+        return broker_id
+
+    broker_ids = [
+        b.id for b in db.collection("users")
+        .where(filter=FieldFilter("role", "==", "broker"))
+        .select([])
+        .stream()
+    ]
+    if not broker_ids:
+        raise NoBrokersAvailable()
+
+    broker_id = random.choice(broker_ids)
+    user_ref.set({"assignedBrokerId": broker_id}, merge=True)
+    return broker_id
