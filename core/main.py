@@ -132,7 +132,14 @@ def verify(app_id: str):
 
 @app.post("/affordability-estimate")
 def affordability_estimate(body: AffordabilityIn):
-    return check_affordability(**body.model_dump())
+    result = check_affordability(**body.model_dump())
+
+    if result["decision"] == "PASS":
+        return {"decision": "PASS"}
+
+    failed = [r for r in result["reasons"] if r.startswith("FAIL")]
+    return {"decision": "FAIL", "reasons": failed}
+
 @app.post("/affordability")
 def affordability(body: AffordabilityIn, authorization: Optional[str] = Header(None)):
     # TODO: run the LangGraph affordability agent
