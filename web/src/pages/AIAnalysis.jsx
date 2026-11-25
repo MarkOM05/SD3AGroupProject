@@ -402,12 +402,14 @@ function AIAnalysis() {
                                                     <h4>Assessment checks</h4>
                                                     <AffordabilityChecks reasons={affordabilityResult.reasons} />
 
-                                                    {affordabilityResult.explanation && (
+												{/*
+													<!--{affordabilityResult.explanation && (
                                                         <div className="assessment-explanation">
                                                             <h4>Detailed explanation</h4>
-                                                            <p>{affordabilityResult.explanation.replace(/\*\*/g, "").replace(/[*#]/g, "")}</p>
+													<p>{affordabilityResult.explanation</p>
                                                         </div>
-                                                    )}
+													)}-->
+												*/}
 
                                                     {affordabilityResult.assumptions && (
                                                         <div className="assessment-assumptions">
