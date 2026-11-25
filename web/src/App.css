@@ -613,15 +613,8 @@
   }
 }
 
-.ai-analysis-page {
-  padding: 30px;
-  background-color: #f5f7fa;
-  min-height: 100vh;
-  color: #263445;
-  font-family: Arial, sans-serif;
-}
-/* AI Analysis Page */
 
+/* AI Analysis Page */
 .ai-analysis-page {
   padding: 30px;
   background-color: #f5f7fa;
@@ -645,29 +638,144 @@
   font-size: 15px;
 }
 
-/* Application selector */
-
+/* Applicant Selection */
 .analysis-selection {
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 .analysis-selection label {
   display: block;
   font-weight: bold;
-  margin-bottom: 10px;
-  text-align: left;
+  color: #263445;
+  margin-bottom: 8px;
+  font-size: 14px;
 }
 
 .analysis-selection select {
-	display: block;
-	width: 450px;
-	max-width: 100%;
-	padding: 12px;
-	border: 1px solid #cbd5e0;
-	border-radius: 6px;
-	background-color: #ffffff;
-	color: #263445;
-	font-size: 14px;
+  display: block;
+  width: 100%;
+  max-width: 450px;
+  padding: 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #263445;
+  font-size: 14px;
+}
+
+/* Final Decision Panel */
+.final-decision {
+  background-color: #ffffff;
+  border: 1px solid #aeb8c4;
+  margin-bottom: 15px;
+}
+
+.decision-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background-color: #f0f2f5;
+}
+
+.decision-header h3 {
+  color: #172b4d;
+  font-size: 17px;
+  margin: 0 0 7px;
+}
+
+.decision-header p {
+  color: #718096;
+  font-size: 13px;
+  margin: 0;
+}
+
+.decision-header button {
+  background-color: #ffffff;
+  color: #263445;
+  border: 1px solid #aeb8c4;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 13px;
+  cursor: not-allowed;
+}
+
+.decision-result {
+  padding: 15px;
+}
+
+.decision-result h3 {
+  color: #172b4d;
+  font-size: 16px;
+  margin: 0 0 7px;
+}
+
+.decision-result p {
+  color: #718096;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Agent Results */
+
+.agent-results {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.agent-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  background-color: #ffffff;
+  border: 1px solid #aeb8c4;
+  padding: 14px 16px;
+}
+
+.agent-row h3 {
+  color: #172b4d;
+  font-size: 15px;
+  margin: 0 0 5px;
+}
+
+.agent-row p {
+  color: #718096;
+  font-size: 12px;
+  margin: 0;
+}
+
+.agent-pending {
+  color: #946200;
+  background-color: #fff4d6;
+  border-radius: 5px;
+  padding: 6px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Agent Reasoning */
+
+.agent-reasoning {
+  background-color: #ffffff;
+  border: 1px solid #aeb8c4;
+  padding: 18px;
+}
+
+.agent-reasoning h3 {
+  color: #172b4d;
+  font-size: 16px;
+  margin: 0 0 15px;
+}
+
+.agent-reasoning p {
+  color: #526174;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* Borrower summary */

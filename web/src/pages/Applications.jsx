@@ -250,7 +250,7 @@ function Applications() {
 				<tr>
 				  <th>Applicant</th>
 				  <th>Loan</th>
-				  <th>City</th>
+				  <th>County</th>
 				  <th>LTV</th>
 				  <th>Risk</th>
 				  <th>Status</th>
