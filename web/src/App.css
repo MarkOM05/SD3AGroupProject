@@ -778,6 +778,162 @@
   margin: 0;
 }
 
+
+/* AI assessment result formatting */
+.agent-content {
+    width: 100%;
+    min-width: 0;
+}
+
+.assessment-summary {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.assessment-topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.assessment-topline h4,
+.assessment-summary h4 {
+    margin: 0 0 12px;
+}
+
+.assessment-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.assessment-metrics div {
+    padding: 14px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.assessment-metrics span,
+.valuation-summary span {
+    display: block;
+    color: #64748b;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.assessment-metrics strong {
+    font-size: 18px;
+    color: #1e293b;
+}
+
+.assessment-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.assessment-check {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 14px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.assessment-check p {
+    margin: 5px 0 0;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.check-pass,
+.check-fail,
+.check-pending {
+    display: inline-block;
+    flex-shrink: 0;
+    padding: 6px 11px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.check-pass {
+    color: #166534;
+    background: #dcfce7;
+}
+
+.check-fail {
+    color: #991b1b;
+    background: #fee2e2;
+}
+
+.check-pending {
+    color: #92400e;
+    background: #fef3c7;
+}
+
+.assessment-explanation,
+.assessment-assumptions {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.assessment-explanation p {
+    white-space: pre-line;
+    line-height: 1.7;
+    color: #475569;
+}
+
+.assessment-assumptions ul {
+    padding-left: 20px;
+    color: #475569;
+    line-height: 1.8;
+}
+
+.valuation-summary {
+    margin-top: 15px;
+    padding: 20px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.valuation-summary strong {
+    display: block;
+    font-size: 30px;
+    color: #166534;
+}
+
+.assessment-error {
+    color: #b91c1c;
+    padding: 10px;
+    background: #fef2f2;
+    border-radius: 8px;
+}
+
+@media (max-width: 700px) {
+    .assessment-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .assessment-topline {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
 /* Borrower summary */
 
 .borrower-analysis {

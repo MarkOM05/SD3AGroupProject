@@ -21,11 +21,9 @@ async function requestAssessment(endpoint, token, requestData) {
     if (!response.ok) {
         throw new Error(responseText || "API request failed: " + response.status);
     }
-
     if (!responseText.trim()) {
         throw new Error("The API returned an empty response.");
     }
-
     let result;
 
     try {
@@ -37,12 +35,44 @@ async function requestAssessment(endpoint, token, requestData) {
     if (result === null || result === undefined || result === "string") {
         throw new Error("No usable assessment result was returned.");
     }
+    return result;
+}
 
-    if (typeof result === "object") {
-        return JSON.stringify(result, null, 2);
+// Format amounts as euros
+function formatEuro(value) {
+    return new Intl.NumberFormat("en-IE", {
+        style: "currency",
+        currency: "EUR",
+        maximumFractionDigits: 0
+    }).format(value);
+}
+
+// Display individual affordability checks
+function AffordabilityChecks({ reasons }) {
+    if (!reasons || reasons.length === 0) {
+        return <p>No individual assessment checks were returned.</p>;
     }
 
-    return String(result);
+    return (
+        <div className="assessment-checks">
+            {reasons.map((reason, index) => {
+                let passed = reason.startsWith("PASS:");
+                let failed = reason.startsWith("FAIL:");
+                return (
+                    <div className="assessment-check" key={index}>
+                        <div>
+                            <strong>{passed ? "Passed" : failed ? "Failed" : "Information"}</strong>
+                            <p>{reason.replace("PASS:", "").replace("FAIL:", "").trim()}</p>
+                        </div>
+
+                        <span className={passed ? "check-pass" : failed ? "check-fail" : "check-pending"}>
+                            {passed ? "PASS" : failed ? "FAIL" : "INFO"}
+                        </span>
+                    </div>
+                );
+            })}
+        </div>
+    );
 }
 
 function AIAnalysis() {
@@ -53,12 +83,12 @@ function AIAnalysis() {
 
     // Affordability assessment state
     const [affordabilityStatus, setAffordabilityStatus] = useState("Pending");
-    const [affordabilityResult, setAffordabilityResult] = useState("");
+    const [affordabilityResult, setAffordabilityResult] = useState(null);
     const [affordabilityMessage, setAffordabilityMessage] = useState("");
 
     // Valuation assessment state
     const [valuationStatus, setValuationStatus] = useState("Pending");
-    const [valuationResult, setValuationResult] = useState("");
+    const [valuationResult, setValuationResult] = useState(null);
     const [valuationMessage, setValuationMessage] = useState("");
 
     // Load applications from Firestore
@@ -91,7 +121,6 @@ function AIAnalysis() {
                 }
 
                 const snapshot = await getDocs(applicationsQuery);
-
                 const applicationList = await Promise.all(
                     snapshot.docs.map(async (document) => {
                         const application = document.data();
@@ -107,7 +136,6 @@ function AIAnalysis() {
                                 applicantName = userDocument.data().name;
                             }
                         }
-
                         return {
                             ...application,
                             id: document.id,
@@ -121,7 +149,6 @@ function AIAnalysis() {
                 if (applicationList.length > 0) {
                     setSelectedApplicationId(applicationList[0].id);
                 }
-
             } catch (error) {
                 console.error("Error loading AI Analysis applications:", error);
                 setErrorMessage("Unable to load applications.");
@@ -129,7 +156,6 @@ function AIAnalysis() {
                 setLoading(false);
             }
         });
-
         return unsubscribe;
     }, []);
 
@@ -145,38 +171,37 @@ function AIAnalysis() {
     // Run assessments whenever the selected applicant changes
     useEffect(() => {
         let ignore = false;
-
         async function runAssessments() {
             if (!selectedApplication) {
                 return;
             }
 
             setAffordabilityStatus("Running");
-            setAffordabilityResult("");
+            setAffordabilityResult(null);
             setAffordabilityMessage("");
-
             setValuationStatus("Running");
-            setValuationResult("");
+            setValuationResult(null);
             setValuationMessage("");
-
             try {
                 const user = auth.currentUser;
-
                 if (!user) {
                     throw new Error("You must be logged in.");
                 }
 
                 const token = await user.getIdToken();
-
                 // Run Affordability Agent
                 try {
+                    const property = selectedApplication.property;
+
+                    if (!property) {
+                        throw new Error("Property information is missing.");
+                    }
+
                     const affordabilityData = {
                         income: Number(selectedApplication.income),
                         debts: Number(selectedApplication.debts),
                         deposit: Number(selectedApplication.deposit),
-                        propertyValue: Number(
-                            selectedApplication.property.askingPrice
-                        ),
+                        propertyValue: Number(property.askingPrice),
                         termYears: Number(selectedApplication.termYears)
                     };
 
@@ -200,12 +225,11 @@ function AIAnalysis() {
                         setAffordabilityResult(result);
                         setAffordabilityStatus("Complete");
                     }
-
                 } catch (error) {
                     console.error("Affordability API error:", error);
 
                     if (!ignore) {
-                        setAffordabilityStatus("Pending");
+                        setAffordabilityStatus("Failed");
                         setAffordabilityMessage(error.message);
                     }
                 }
@@ -251,7 +275,7 @@ function AIAnalysis() {
                     console.error("Valuation API error:", error);
 
                     if (!ignore) {
-                        setValuationStatus("Pending");
+                        setValuationStatus("Failed");
                         setValuationMessage(error.message);
                     }
                 }
@@ -260,17 +284,16 @@ function AIAnalysis() {
                 console.error("Unable to start assessments:", error);
 
                 if (!ignore) {
-                    setAffordabilityStatus("Pending");
+                    setAffordabilityStatus("Failed");
                     setAffordabilityMessage(error.message);
 
-                    setValuationStatus("Pending");
+                    setValuationStatus("Failed");
                     setValuationMessage(error.message);
                 }
             }
         }
 
         runAssessments();
-
         return () => {
             ignore = true;
         };
@@ -283,13 +306,9 @@ function AIAnalysis() {
                 <p>Review AI assessments and lending recommendations</p>
             </header>
 
-            {loading && (
-                <p>Loading applications...</p>
-            )}
+            {loading && <p>Loading applications...</p>}
 
-            {errorMessage && (
-                <p>{errorMessage}</p>
-            )}
+            {errorMessage && <p>{errorMessage}</p>}
 
             {!loading && applications.length === 0 && (
                 <p>No applications are available for AI analysis.</p>
@@ -297,7 +316,6 @@ function AIAnalysis() {
 
             {!loading && applications.length > 0 && (
                 <>
-                    {/* Applicant Selection */}
                     <section className="analysis-selection">
                         <label htmlFor="application-select">
                             Select Applicant
@@ -325,17 +343,13 @@ function AIAnalysis() {
 
                     {selectedApplication && (
                         <>
-                            {/* Final Decision */}
                             <section className="final-decision">
                                 <header className="decision-header">
                                     <div>
                                         <h3>
                                             AI Deliberation: {selectedApplication.applicantName}
                                         </h3>
-
-                                        <p>
-                                            Reference: {selectedApplication.id}
-                                        </p>
+                                        <p>Reference: {selectedApplication.id}</p>
                                     </div>
 
                                     <button type="button" disabled>
@@ -344,22 +358,78 @@ function AIAnalysis() {
                                 </header>
 
                                 <div className="decision-result">
-                                    <h3>Final Decision: Pending AI Assessment</h3>
-                                    <p>Consensus: Awaiting agent results</p>
+                                    <h3>Final Decision: Awaiting Deliberation</h3>
+                                    <p>
+                                        The connected assessments do not yet produce a combined underwriting decision.
+                                    </p>
                                 </div>
                             </section>
 
-                            {/* Agent Results */}
                             <section className="agent-results">
 
                                 {/* Affordability Agent */}
                                 <article className="agent-row">
-                                    <div>
+                                    <div className="agent-content">
                                         <h3>Affordability Agent</h3>
 
-                                        <p>
-                                            {affordabilityResult || affordabilityMessage || "Running affordability assessment..."}
-                                        </p>
+                                        {affordabilityStatus === "Complete" && affordabilityResult && (
+                                            <>
+                                                <div className="assessment-summary">
+                                                    <div className="assessment-topline">
+                                                        <h4>Affordability Assessment</h4>
+                                                        <span className={affordabilityResult.decision === "PASS" ? "check-pass" : "check-fail"}>
+                                                            {affordabilityResult.decision || "Result returned"}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="assessment-metrics">
+                                                        <div>
+                                                            <span>Loan amount</span>
+                                                            <strong>{formatEuro(affordabilityResult.loan)}</strong>
+                                                        </div>
+
+                                                        <div>
+                                                            <span>Monthly repayment</span>
+                                                            <strong>{formatEuro(affordabilityResult.monthly_repayment)}</strong>
+                                                        </div>
+
+                                                        <div>
+                                                            <span>Stressed repayment</span>
+                                                            <strong>{formatEuro(affordabilityResult.stressed_repayment)}</strong>
+                                                        </div>
+                                                    </div>
+
+                                                    <h4>Assessment checks</h4>
+                                                    <AffordabilityChecks reasons={affordabilityResult.reasons} />
+
+                                                    {affordabilityResult.explanation && (
+                                                        <div className="assessment-explanation">
+                                                            <h4>Detailed explanation</h4>
+                                                            <p>{affordabilityResult.explanation.replace(/\*\*/g, "").replace(/[*#]/g, "")}</p>
+                                                        </div>
+                                                    )}
+
+                                                    {affordabilityResult.assumptions && (
+                                                        <div className="assessment-assumptions">
+                                                            <h4>Assumptions used</h4>
+                                                            <ul>
+                                                                {affordabilityResult.assumptions.map((assumption, index) => (
+                                                                    <li key={index}>{assumption}</li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {affordabilityStatus === "Running" && (
+                                            <p>Running affordability assessment...</p>
+                                        )}
+
+                                        {affordabilityMessage && (
+                                            <p className="assessment-error">{affordabilityMessage}</p>
+                                        )}
                                     </div>
 
                                     <strong className="agent-pending">
@@ -369,24 +439,35 @@ function AIAnalysis() {
 
                                 {/* Market & Macro Agent */}
                                 <article className="agent-row">
-                                    <div>
+                                    <div className="agent-content">
                                         <h3>Market & Macro Agent</h3>
                                         <p>Agent not yet connected to the API.</p>
                                     </div>
 
-                                    <strong className="agent-pending">
-                                        Pending
-                                    </strong>
+                                    <strong className="agent-pending">Pending</strong>
                                 </article>
 
                                 {/* Valuation Agent */}
                                 <article className="agent-row">
-                                    <div>
+                                    <div className="agent-content">
                                         <h3>Valuation Agent</h3>
 
-                                        <p>
-                                            {valuationResult || valuationMessage || "Running property valuation..."}
-                                        </p>
+                                        {valuationStatus === "Complete" && valuationResult && (
+                                            <div className="valuation-summary">
+                                                <span>Estimated property value</span>
+                                                <strong>
+                                                    {formatEuro(valuationResult.estimatedPrice)}
+                                                </strong>
+                                            </div>
+                                        )}
+
+                                        {valuationStatus === "Running" && (
+                                            <p>Running property valuation...</p>
+                                        )}
+
+                                        {valuationMessage && (
+                                            <p className="assessment-error">{valuationMessage}</p>
+                                        )}
                                     </div>
 
                                     <strong className="agent-pending">
@@ -396,25 +477,20 @@ function AIAnalysis() {
 
                                 {/* Underwriting Strategist */}
                                 <article className="agent-row">
-                                    <div>
+                                    <div className="agent-content">
                                         <h3>Underwriting Strategist</h3>
                                         <p>Awaiting the underwriting API integration.</p>
                                     </div>
 
-                                    <strong className="agent-pending">
-                                        Pending
-                                    </strong>
+                                    <strong className="agent-pending">Pending</strong>
                                 </article>
 
                             </section>
 
-                            {/* Agent Reasoning */}
                             <section className="agent-reasoning">
                                 <h3>Agent Reasoning</h3>
-
                                 <p>
-                                    Assessment explanations will appear here
-                                    once the relevant agents return their results.
+                                    Individual assessment explanations are displayed within their respective agent sections.
                                 </p>
                             </section>
                         </>
