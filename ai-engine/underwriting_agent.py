@@ -8,6 +8,8 @@ from crewai import LLM, Agent, Crew, Task
 
 from affordibility import check_affordability
 from underwriting import make_credit_memo, make_decision, save_log
+from valuation import check_valuation
+from firestore_save import save_to_firestore
 
 # example application same one as the affordability agent
 application = dict(gross_income=95000, net_monthly_income=5900, monthly_debts=250,
@@ -17,8 +19,10 @@ application = dict(gross_income=95000, net_monthly_income=5900, monthly_debts=25
 # 1 get the other agents results
 affordability = check_affordability(**application)
 
-# sample valuation result swap this for the real valuation agent once its built
-valuation = {"asking_price": 420000, "valuation": 425000, "verdict": "FAIR", "ltv": 88.9}
+#calls valuation agent with hardcoded data
+valuation = check_valuation(county="Cork", sizeSqm=110, bedrooms=3, type="Semi-D",
+                            berRating="C1", askingPrice=application["price"],
+                            deposit=application["deposit"])
 
 # 2 the rules make the decision
 decision = make_decision(affordability, valuation)
@@ -55,6 +59,8 @@ summary = str(crew.kickoff())
 # 4 save everything so the web portal can show it
 memo = make_credit_memo("APP-001", affordability, valuation, decision, summary)
 path = save_log(memo)
+# send the same json to firestore
+print("saved to firestore at", save_to_firestore(memo))
 
 print("\n strategists decision:", decision["decision"], "confidence:", decision["confidence"])
 print(" credit memo saved to", path)
