@@ -10,7 +10,10 @@ from affordibility import check_affordability
 from underwriting import make_credit_memo, make_decision, save_log
 from valuation import check_valuation
 from firestore_save import save_to_firestore
-from council import run_council
+from council import council_logs, run_council
+
+# the id of a test application in firestore
+APP_ID = "Yor8jXFsTgscYZ5QM8K5"
 
 # example application same one as the affordability agent
 application = dict(gross_income=95000, net_monthly_income=5900, monthly_debts=250,
@@ -70,11 +73,11 @@ crew = Crew(agents=[agent], tasks=[task])
 summary = str(crew.kickoff())
 
 # 4 save everything so the web portal can show it
-memo = make_credit_memo("APP-001", affordability, valuation, decision, summary)
+memo = make_credit_memo(APP_ID, affordability, valuation, decision, summary)
 memo["council"] = council
 path = save_log(memo)
 # send the same json to firestore
-print("saved to firestore at", save_to_firestore(memo))
+print("saved to firestore at", save_to_firestore(APP_ID, memo, council_logs(council)))
 
 print("\n strategists decision:", decision["decision"], "confidence:", decision["confidence"])
 print(" credit memo saved to", path)

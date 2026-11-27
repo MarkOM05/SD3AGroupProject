@@ -81,3 +81,20 @@ def run_council(affordability, valuation, rules_decision, models=None):
 
     decision, summary = count_votes(votes, rules_decision)
     return {"decision": decision, "summary": summary, "votes": votes}
+
+# turns the votes into agent logs with the fields from docs/schema.md
+def council_logs(council):
+    logs = []
+    for vote in council["votes"]:
+        # how many models agreed with this one eg 2 of 3 is 0.67
+        agreed = sum(1 for v in council["votes"] if v["vote"] == vote["vote"])
+        logs.append({
+            "agentName": "UnderwritingStrategist",
+            "modelUsed": vote["model"],
+            # everything after the first line is the models reason
+            "reasoning": vote["reply"].strip().split("\n", 1)[-1].strip(),
+            "output": {"vote": vote["vote"], "councilDecision": council["decision"],
+                       "councilSummary": council["summary"]},
+            "confidence": round(agreed / len(council["votes"]), 2) if vote["vote"] else 0.0,
+        })
+    return logs
