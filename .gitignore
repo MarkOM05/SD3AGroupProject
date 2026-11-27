@@ -39,3 +39,6 @@ ui-debug.log
 
 
 .DS_Store
+
+ai-engine/data/
+ai-engine/logs/

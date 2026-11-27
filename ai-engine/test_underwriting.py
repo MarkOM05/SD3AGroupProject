@@ -56,3 +56,22 @@ def test_memo_has_everything_the_console_needs():
     for field in ["application_id", "decision", "confidence", "reasons",
                   "affordability", "valuation", "market", "summary"]:
         assert field in memo
+
+# ltv too high for what the house is worth
+
+def test_can_afford_but_ltv_too_high_refers():
+    # fair price but the loan is 98.4% of the valuation so a human checks it
+    high_ltv = {"verdict": "FAIR", "ltv": 98.4, "ltvOk": False}
+    result = make_decision(can_afford, high_ltv)
+    assert result["decision"] == "REFER"
+    assert result["confidence"] == "MEDIUM"
+
+
+def test_cant_afford_and_ltv_too_high_still_declines():
+    high_ltv = {"verdict": "FAIR", "ltv": 98.4, "ltvOk": False}
+    assert make_decision(cant_afford, high_ltv)["decision"] == "DECLINE"
+
+
+def test_ltv_within_limit_still_approves():
+    ok_ltv = {"verdict": "FAIR", "ltv": 85.0, "ltvOk": True}
+    assert make_decision(can_afford, ok_ltv)["decision"] == "APPROVE"

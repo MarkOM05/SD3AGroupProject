@@ -26,7 +26,7 @@ def affordability_tool(gross_income: float, net_monthly_income: float, monthly_d
 
 # temperature=0 makes its answers consistent and its in openAIs format for connecting not claudes
 llm = LLM( model="openai/openai/gpt-oss-120b", base_url="https://api.groq.com/openai/v1", api_key=os.environ["GROQ_API_KEY"], temperature=0,)
-# the agent: who it is and how it should behave this is its prompt itll use each time to determine how it should behave
+# the agent who it is and how it should behave this is its prompt itll use each time to determine how it should behave
 agent = Agent(
     role="Mortgage Affordability Analyst",
     goal="Decide whether an applicant can afford their mortgage and explain why to an underwriter",

@@ -26,6 +26,14 @@ def make_decision(affordability, valuation, market=None):
         reasons.append("the applicant can afford it but the property looks overpriced")
         reasons.append("an underwriter should check the valuation before approving")
 
+    # can afford it but the loan is too big for what the house is actually worth
+    # .get uses True if theres no ltvOk so older valuation results still work
+    elif not valuation.get("ltvOk", True):
+        decision, confidence = "REFER", "MEDIUM"
+        reasons.append(f"the applicant can afford it but the loan is {valuation['ltv']}% of the "
+                       f"property value which is over the 90% limit")
+        reasons.append("an underwriter should order a full valuation before approving")
+
     # can afford it and the price is fair or good so everything agrees
     else:
         decision, confidence = "APPROVE", "HIGH"

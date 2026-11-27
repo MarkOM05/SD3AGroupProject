@@ -1,6 +1,6 @@
 # the underwriting strategist agent usuing crewai and gemini
-# the rules in underwriting.py make the decision then the llm writes the credit memo explaining it
-# needs GEMINI_API_KEY set as an environment variable
+# the rules in underwriting.py make the decision the council of 3 models checks it then gemini writes the credit memo
+# needs GEMINI_API_KEY GROQ_API_KEY and FIREBASE_KEY_PATH set and ollama running
 
 import os
 
@@ -8,6 +8,12 @@ from crewai import LLM, Agent, Crew, Task
 
 from affordibility import check_affordability
 from underwriting import make_credit_memo, make_decision, save_log
+from valuation import check_valuation
+from firestore_save import save_to_firestore
+from council import council_logs, run_council
+
+# the id of a test application in firestore
+APP_ID = "Yor8jXFsTgscYZ5QM8K5"
 
 # example application same one as the affordability agent
 application = dict(gross_income=95000, net_monthly_income=5900, monthly_debts=250,
@@ -17,11 +23,23 @@ application = dict(gross_income=95000, net_monthly_income=5900, monthly_debts=25
 # 1 get the other agents results
 affordability = check_affordability(**application)
 
-# sample valuation result swap this for the real valuation agent once its built
-valuation = {"asking_price": 420000, "valuation": 425000, "verdict": "FAIR", "ltv": 88.9}
+#calls valuation agent with hardcoded data
+valuation = check_valuation(county="Cork", sizeSqm=110, bedrooms=3, type="Semi-D",
+                            berRating="C1", askingPrice=application["price"],
+                            deposit=application["deposit"])
 
 # 2 the rules make the decision
 decision = make_decision(affordability, valuation)
+
+# the council of 3 models votes on it too
+council = run_council(affordability, valuation, decision["decision"])
+print("council:", council["summary"])
+
+# if the council disagrees with the rules a human should check it
+if council["decision"] != decision["decision"]:
+    decision["decision"] = "REFER"
+    decision["confidence"] = "MEDIUM"
+    decision["reasons"].append(f"the council voted {council['decision']} which disagrees with the rules")
 
 # 3 gemini writes the credit memo explaining the decision
 # flash lite because the free tier allows 500 requests a day instead of 20
@@ -42,8 +60,10 @@ task = Task(
                 f"Affordability result: {affordability}\n\n"
                 f"Valuation result: {valuation}\n\n"
                 f"Final decision: {decision}\n\n"
-                f"Start with the decision and confidence exactly as given. Then explain in plain "
-                f"English why using the figures, and list any risks the underwriter should know.",
+                f"Start with the decision and confidence exactly as given. " 
+                f"mlValuation is the machine learning models estimate of the property value not a surveyors valuation. "
+                f"The loan amount is in the affordability result use that exact figure. "
+                f"Then explain in plain English why using the figures, and list any risks the underwriter should know.",
     expected_output="A short credit memo starting with the decision and confidence, then the "
                     "reasons and risks.",
     agent=agent,
@@ -53,8 +73,11 @@ crew = Crew(agents=[agent], tasks=[task])
 summary = str(crew.kickoff())
 
 # 4 save everything so the web portal can show it
-memo = make_credit_memo("APP-001", affordability, valuation, decision, summary)
+memo = make_credit_memo(APP_ID, affordability, valuation, decision, summary)
+memo["council"] = council
 path = save_log(memo)
+# send the same json to firestore
+print("saved to firestore at", save_to_firestore(APP_ID, memo, council_logs(council)))
 
 print("\n strategists decision:", decision["decision"], "confidence:", decision["confidence"])
 print(" credit memo saved to", path)
